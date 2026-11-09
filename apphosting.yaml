@@ -5,7 +5,7 @@ runConfig:
   maxInstances: 3
   cpu: 1
   memoryMiB: 1024
-  concurrency: 8
+  concurrency: 4
 env:
   - variable: QUOTEFORGE_DEMO_MODE
     value: "false"
