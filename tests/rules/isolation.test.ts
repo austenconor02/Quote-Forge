@@ -86,6 +86,7 @@ test("invitation hashes and token issuance are private even to direct owner clie
   const owner = env.authenticatedContext("sole-owner", {...verifiedGoogle, platformOwner: true}).firestore();
   await assertFails(getDoc(doc(owner, "platformInvitations/hash")));
   await assertFails(getDoc(doc(owner, "proposalShares/hash")));
+  await assertFails(getDoc(doc(owner, "invitationEmailAssets/hash")));
   await assertFails(setDoc(doc(owner, "companies/a/invitations/token"), {token: "unsafe"}));
 });
 test("storage denies every direct client access; private files require backend authorization", async () => {

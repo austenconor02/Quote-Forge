@@ -5,6 +5,7 @@ import type { Auth } from "firebase-admin/auth";
 import type { Company } from "../models";
 import { canAcceptInvitation, invitationOrigin, INVITATION_LIFETIME_MS, normalizeInvitationEmail, validInvitationToken, verifiedGoogleIdentity, type InvitationIdentity } from "../invitation-policy";
 import { EmailDeliveryError, type InvitationEmail } from "./email";
+import type { InvitationEmailBranding, StoredInvitationCompany } from "../invitation-email-branding";
 
 export type IssueInput = {companyId: string; company?: Company; email: string; action: "create" | "resend" | "reassign"; idempotencyKey?: string};
 export type IssueResult = {companySaved: true; delivered: true; invitationId: string};
@@ -12,6 +13,7 @@ type OwnerSession = {demo: boolean; uid: string};
 export type InvitationDependencies = {
   db: Firestore; auth: Pick<Auth, "revokeRefreshTokens">; owner: () => Promise<OwnerSession>;
   emailConfigured: () => boolean; sendEmail: (message: InvitationEmail) => Promise<void>;
+  prepareBranding: (company: StoredInvitationCompany, expiresAt: string) => Promise<InvitationEmailBranding>;
   saveCompany: (company: unknown) => Promise<Company>;
   rateLimit: (uid: string, action: string, options: {limit: number; windowMs: number}) => Promise<void>;
   now?: () => number;
@@ -22,7 +24,8 @@ const hash = (value: string) => createHash("sha256").update(value).digest("hex")
 const validId = (value: unknown): value is string => typeof value === "string" && /^[a-zA-Z0-9-]{1,100}$/.test(value);
 const timestampMs = (value: unknown) => value instanceof Timestamp ? value.toMillis() : NaN;
 const confirmed = (invitationId: string): IssueResult => ({companySaved: true, delivered: true, invitationId});
-function existingOperation(data: FirebaseFirestore.DocumentData): IssueResult {
+function existingOperation(data: FirebaseFirestore.DocumentData): IssueResult | null {
+  if (data.status === "rejected") return null; // A definitive rejection can safely retry with a new token.
   if (data.status === "confirmed" && validId(data.invitationId)) return confirmed(data.invitationId);
   throw new AccessError(409, data.status === "unknown" ? "The earlier email delivery is uncertain. It will not be automatically resent. Check the provider before explicitly resending." : "This invitation operation has already been attempted or is in progress. No duplicate email was sent.");
 }
@@ -41,7 +44,7 @@ export function createInvitationService(deps: InvitationDependencies) {
     const operationId = hash(JSON.stringify([owner.uid, input.companyId, email, input.action, key]));
     const operation = deps.db.collection("mailOperations").doc(operationId);
     const priorOperation = await operation.get();
-    if (priorOperation.exists) return existingOperation(priorOperation.data()!);
+    if (priorOperation.exists) {const previous = existingOperation(priorOperation.data()!); if (previous) return previous;}
     await deps.rateLimit(owner.uid, "invitation-issue", {limit: 15, windowMs: 60000});
     const companyRef = deps.db.collection("companies").doc(input.companyId);
     const previous = (await companyRef.get()).data();
@@ -59,7 +62,7 @@ export function createInvitationService(deps: InvitationDependencies) {
     const expiresAt = Timestamp.fromMillis(time + INVITATION_LIFETIME_MS);
     const prepared = await deps.db.runTransaction(async transaction => {
       const [opSnapshot, companySnapshot, assignmentSnapshot, throttle] = await Promise.all([transaction.get(operation), transaction.get(companyRef), transaction.get(assignmentRef), transaction.get(throttleRef)]);
-      if (opSnapshot.exists) return {result: existingOperation(opSnapshot.data()!), revoke: [] as string[], name: ""};
+      if (opSnapshot.exists) {const result = existingOperation(opSnapshot.data()!); if (result) return {result, revoke: [] as string[], company: null};}
       if (!companySnapshot.exists) throw new AccessError(404, "Company not found.");
       const company = companySnapshot.data()!;
       const assignment = assignmentSnapshot.data();
@@ -90,7 +93,7 @@ export function createInvitationService(deps: InvitationDependencies) {
       transaction.set(assignmentRef, {activeTokenHash: tokenHash, invitationId, email, operationId, state: "Preparing", updatedAt: Timestamp.fromMillis(time)});
       transaction.set(operation, {companyId: input.companyId, email, ownerUid: owner.uid, invitationId, tokenHash, action: input.action, status: "preparing", createdAt: Timestamp.fromMillis(time), updatedAt: Timestamp.fromMillis(time), expiresAt: Timestamp.fromMillis(time + 30 * 24 * 60 * 60 * 1000)});
       transaction.set(throttleRef, {operationId, leaseUntil: time + 30000, lastDispatchAt: Number(throttle.data()?.lastDispatchAt || 0)});
-      return {result: null, revoke, name: String(company.name)};
+      return {result: null, revoke, company: {id: input.companyId, name: String(company.name), branding: {primary: company.branding?.primary, ...(company.branding?.logoStoragePath ? {logoStoragePath: company.branding.logoStoragePath} : {})}} as StoredInvitationCompany};
     });
     if (prepared.result) return prepared.result;
 
@@ -100,6 +103,7 @@ export function createInvitationService(deps: InvitationDependencies) {
         if (!op.exists || op.data()?.status === "confirmed") return;
         transaction.update(operation, {status: kind, updatedAt: Timestamp.fromMillis(now())});
         transaction.update(invitationRef, {status: kind === "unknown" ? "Unknown" : "Rejected"});
+        transaction.update(summaryRef, {status: "Suspended"});
         if (assignment.data()?.operationId === operationId) transaction.update(assignmentRef, {activeTokenHash: null, state: kind === "unknown" ? "Unknown" : "Rejected", updatedAt: Timestamp.fromMillis(now())});
         if (throttle.data()?.operationId === operationId) transaction.update(throttleRef, {operationId: null, leaseUntil: 0});
       });
@@ -109,6 +113,9 @@ export function createInvitationService(deps: InvitationDependencies) {
       await fail("rejected");
       throw new AccessError(503, "Previous company access is suspended, but session revocation did not finish. No invitation was sent.");
     }
+    let branding: InvitationEmailBranding;
+    try {branding = await deps.prepareBranding(prepared.company!, expiresAt.toDate().toISOString());}
+    catch {await fail("rejected"); throw new AccessError(503, "The invitation email logo could not be prepared. The company was saved; no email was sent. Check its saved logo and retry.");}
     try {
       await deps.db.runTransaction(async transaction => {
         const [op, assignment, throttle] = await Promise.all([transaction.get(operation), transaction.get(assignmentRef), transaction.get(throttleRef)]);
@@ -118,7 +125,7 @@ export function createInvitationService(deps: InvitationDependencies) {
         transaction.update(throttleRef, {lastDispatchAt: now(), leaseUntil: now() + 20000});
       });
     } catch (error) {await fail("rejected"); throw error;}
-    try {await deps.sendEmail({toEmail: email, companyName: prepared.name, invitationUrl: `${origin}/invite#token=${rawToken}`, expiresAt: expiresAt.toDate().toISOString()});}
+    try {await deps.sendEmail({...branding, toEmail: email, companyName: prepared.company!.name, invitationUrl: `${origin}/invite#token=${rawToken}`, expiresAt: expiresAt.toDate().toISOString()});}
     catch (error) {const kind = error instanceof EmailDeliveryError ? error.kind : "unknown"; await fail(kind); throw new AccessError(503, kind === "unknown" ? "Email delivery is uncertain. This request will not be automatically resent; check the provider before explicitly resending." : "The email provider rejected this invitation. No successful delivery was recorded.");}
     const result = await deps.db.runTransaction(async transaction => {
       const [op, assignment, company, throttle] = await Promise.all([transaction.get(operation), transaction.get(assignmentRef), transaction.get(companyRef), transaction.get(throttleRef)]);

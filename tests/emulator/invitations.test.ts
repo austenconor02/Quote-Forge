@@ -5,6 +5,7 @@ import { Firestore, Timestamp } from "firebase-admin/firestore";
 import { deleteApp, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import type { Company } from "../../src/lib/models";
+import { invitationEmailBranding } from "../../src/lib/invitation-email-branding";
 import { demoCompanies } from "../../src/lib/demo";
 import { createInvitationService } from "../../src/lib/server/invitation-core";
 import { EmailDeliveryError, invitationEmailConfigured, sendInvitationEmail, type InvitationEmail } from "../../src/lib/server/email";
@@ -34,7 +35,7 @@ async function seed(status: Company["status"] = "Draft") {
 }
 function service(messages: InvitationEmail[], overrides: Partial<Parameters<typeof createInvitationService>[0]> = {}) {
   const ownerUid = `inv-owner-${randomUUID()}`;
-  return createInvitationService({db, auth, owner: async () => ({demo: false, uid: ownerUid}), emailConfigured: () => true, saveCompany: async input => {
+  return createInvitationService({db, auth, owner: async () => ({demo: false, uid: ownerUid}), emailConfigured: () => true, prepareBranding: async company => invitationEmailBranding(company.branding.primary, `https://quoteforge.example.test/api/invitations/logo/${"b".repeat(43)}.png`), saveCompany: async input => {
     const company = input as Company; await db.doc(`companies/${company.id}`).set(company, {merge: true}); return company;
   }, sendEmail: async message => {messages.push(message); tokens.push(digest(tokenFrom(message)));}, rateLimit: async () => {}, now: () => clock, ...overrides});
 }
@@ -74,10 +75,44 @@ test("confirmed issuance stores only a token hash and durable idempotency preven
   const raw = tokenFrom(messages[0]); assert.match(raw, /^[A-Za-z0-9_-]{43}$/);
   assert.ok(!JSON.stringify(result).includes(raw)); assert.equal(new URL(messages[0].invitationUrl).search, "");
   const privateRecord = (await db.doc(`platformInvitations/${digest(raw)}`).get()).data()!;
-  assert.equal(privateRecord.status, "Sent"); assert.equal(privateRecord.expiresAt.toMillis() - privateRecord.createdAt.toMillis(), 172800000);
+  assert.equal(privateRecord.status, "Sent"); assert.equal(privateRecord.expiresAt.toMillis() - privateRecord.createdAt.toMillis(), 604800000);
   assert.ok(!JSON.stringify(privateRecord).includes(raw));
   const summary = (await db.doc(`companies/${company.id}/invitations/${result.invitationId}`).get()).data()!;
   assert.equal(summary.status, "Sent"); assert.equal(summary.tokenHash, undefined); assert.equal(summary.operationId, undefined);
+});
+
+test("branding comes from the saved company and a definitively rejected send retries without duplicating it", async () => {
+  const company = await seed(), messages: InvitationEmail[] = [];
+  const key = randomUUID(); let reject = true;
+  const backend = service(messages, {sendEmail: async message => {messages.push(message); tokens.push(digest(tokenFrom(message))); if (reject) throw new EmailDeliveryError("rejected");}});
+  await assert.rejects(issue(backend, company, "retry@example.com", key), /provider rejected/);
+  assert.equal((await db.doc(`companies/${company.id}`).get()).data()?.status, "Draft");
+  assert.equal(messages[0].companyName, company.name);
+  assert.equal(messages[0].primaryColor, company.branding.primary.toUpperCase());
+  reject = false; clock += 60000;
+  await backend.issueInvitation({companyId: company.id, email: "retry@example.com", action: "create", idempotencyKey: key});
+  assert.equal(messages.length, 2); assert.notEqual(tokenFrom(messages[0]), tokenFrom(messages[1]));
+  const uid = `inv-user-${randomUUID()}`; users.push(uid);
+  await assert.rejects(backend.acceptInvitation(tokenFrom(messages[0]), identity(uid, "retry@example.com")), /no longer valid/);
+  assert.deepEqual(await backend.acceptInvitation(tokenFrom(messages[1]), identity(uid, "retry@example.com")), {companyId: company.id});
+});
+
+test("each explicit resend invalidates the prior unused link even within the same minute", async () => {
+  const company = await seed(), messages: InvitationEmail[] = [], backend = service(messages);
+  await issue(backend, company, "resend@example.com"); clock += 2000;
+  await backend.issueInvitation({companyId: company.id, email: "resend@example.com", action: "resend", idempotencyKey: randomUUID()});
+  assert.notEqual(tokenFrom(messages[0]), tokenFrom(messages[1]));
+  assert.equal((await db.doc(`platformInvitations/${digest(tokenFrom(messages[0]))}`).get()).data()?.status, "Revoked");
+  const uid = `inv-user-${randomUUID()}`; users.push(uid);
+  await assert.rejects(backend.acceptInvitation(tokenFrom(messages[0]), identity(uid, "resend@example.com")), /no longer valid/);
+  await backend.acceptInvitation(tokenFrom(messages[1]), identity(uid, "resend@example.com"));
+});
+
+test("unauthorized issuance never writes a company or prepares a public logo", async () => {
+  let writes = 0, assets = 0;
+  const backend = service([], {owner: async () => {throw new Error("owner access required");}, saveCompany: async () => {writes++; throw new Error();}, prepareBranding: async () => {assets++; throw new Error();}});
+  await assert.rejects(backend.issueInvitation({companyId: "forbidden", email: "test@example.com", action: "create"}), /owner access required/);
+  assert.equal(writes, 0); assert.equal(assets, 0);
 });
 
 test("acceptance requires the invited verified Google email and consumes the token once", async () => {
@@ -196,12 +231,12 @@ test("EmailJS remains gated and only an explicit OK response confirms provider a
   const names = ["EMAIL_DELIVERY_ENABLED", "EMAILJS_SERVICE_ID", "EMAILJS_INVITATION_TEMPLATE_ID", "EMAILJS_PUBLIC_KEY", "EMAILJS_PRIVATE_KEY"];
   const originals = Object.fromEntries(names.map(name => [name, process.env[name]]));
   let calls = 0, mode = "ok";
-  const message = {toEmail: "test@example.com", companyName: "Test Company", invitationUrl: `https://quoteforge.example.test/invite#token=${"x".repeat(43)}`, expiresAt: new Date(clock + 172800000).toISOString()};
+  const message = {...invitationEmailBranding("#122239", `https://quoteforge.example.test/api/invitations/logo/${"b".repeat(43)}.png`), toEmail: "test@example.com", companyName: "Test Company", invitationUrl: `https://quoteforge.example.test/invite#token=${"x".repeat(43)}`, expiresAt: new Date(clock + 604800000).toISOString()};
   try {
     process.env.EMAIL_DELIVERY_ENABLED = "false";
     globalThis.fetch = (async (url, options) => {
       assert.equal(url, "https://api.emailjs.com/api/v1.0/email/send"); calls++;
-      const body = JSON.parse(options!.body as string); assert.equal(body.service_id, "service-test"); assert.equal(body.accessToken, "private-test"); assert.equal(body.template_params.invitation_url, message.invitationUrl);
+      const body = JSON.parse(options!.body as string); assert.equal(body.service_id, "service-test"); assert.equal(body.accessToken, "private-test"); assert.deepEqual(body.template_params, {to_email: message.toEmail, company_name: message.companyName, company_logo_url: message.companyLogoUrl, primary_color: message.primaryColor, header_text_color: message.headerTextColor, button_text_color: message.buttonTextColor, invite_url: message.invitationUrl, expires_in: "7 days"});
       if (mode === "network") throw new TypeError("network error");
       return new Response(mode === "ok" ? "OK" : "not confirmed", {status: mode === "reject" ? 401 : 200});
     }) as typeof fetch;

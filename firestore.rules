@@ -25,6 +25,8 @@ service cloud.firestore {
     }
     // Proposal bearer tokens/hashes are resolved only by the server share endpoint.
     match /proposalShares/{id} { allow read, write: if false; }
+    // Logo-only email snapshots are served as PNG bytes by the public image endpoint.
+    match /invitationEmailAssets/{id} { allow read, write: if false; }
     match /companies/{companyId} {
       allow get: if access(companyId);
       allow list: if owner();

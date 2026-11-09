@@ -24,7 +24,7 @@ Keep `QUOTEFORGE_DEMO_MODE=false`, emulator flags false, and all emulator host v
 - Sessions accept only recent, verified Google ID tokens and use a five-day HttpOnly session cookie. Session verification checks revocation. Login/logout use a random CSRF cookie; mutations require the configured origin.
 - Owner access requires the anchored UID plus the server-issued owner claim. Tenant access requires an Active company, an enabled company membership, and the matching enabled root account assignment. Mutating transactions recheck current access to prevent in-flight writes after suspension/reassignment.
 - Browsers cannot write directly to Firestore. Allowed reads are tenant-scoped; private invitation tokens, delivery operations, owner configuration, and AI settings are not exposed to tenant clients.
-- Storage SDK access is denied. Authenticated server routes validate file paths, ownership, MIME magic bytes, size, and current access. Source files have private immutable content-hash paths; there are no permanent Firebase download-token URLs.
+- Storage SDK access is denied. Authenticated server routes validate file paths, ownership, MIME magic bytes, size, and current access. Email logos have a separate public PNG-only snapshot route; source files have private immutable content-hash paths; there are no permanent Firebase download-token URLs.
 - Cloud saves are explicit and awaited. Company profile edits preserve access status and require the current revision. Customer and draft writes are committed atomically. Lists paginate metadata; full source text is loaded only when a draft is opened.
 - Source JSON is stored privately outside Firestore to respect the document size limit: 4 MB per source, metadata pages of 25, and an 8 MB client list budget. Original files are limited to 20 MB each. Request bodies and server rate limits are bounded.
 - Cached originals in IndexedDB are separated by authenticated UID. Sign-out clears only that user's cached originals. Existing local-development workspaces and other users' caches are preserved.
@@ -42,13 +42,13 @@ Automatic AI quote generation remains unavailable because the original reference
 
 ## Invitations and email
 
-EmailJS service: **`service_mk2cjul`**. Template setup is **on hold at the user's request**. `EMAIL_DELIVERY_ENABLED=false`; missing configuration returns an explicit unavailable response and never reports successful delivery.
+EmailJS service: **`service_mk2cjul`**. Invitation template **`template_ho1ym4c`** is supplied. Its public/private keys and live setup remain pending; see [invitation setup](emailjs-invitations.md). `EMAIL_DELIVERY_ENABLED=false`; missing configuration returns an explicit unavailable response and never reports successful delivery.
 
-When setup resumes, provide these server environment settings:
+Before approved live testing, provide these server environment settings:
 
 ```dotenv
 EMAILJS_SERVICE_ID=service_mk2cjul
-EMAILJS_INVITATION_TEMPLATE_ID=
+EMAILJS_INVITATION_TEMPLATE_ID=template_ho1ym4c
 EMAILJS_PROPOSAL_TEMPLATE_ID=
 EMAILJS_PUBLIC_KEY=
 EMAILJS_PRIVATE_KEY=
@@ -58,7 +58,7 @@ APP_ORIGIN=https://your-approved-host
 
 Keep the private key in a local/server secret store, outside chat and Git. The implementation intentionally requires it for backend sending. Enable EmailJS API requests from non-browser applications in the account's security settings if required. Configure each template's recipient as `{{to_email}}`; do not allow a client-selected arbitrary recipient field. See the checked-in HTML template examples and the [EmailJS REST API](https://www.emailjs.com/docs/rest-api/send/).
 
-Invitation tokens contain 32 random bytes, have a 48-hour lifetime, and are stored only as SHA-256 hashes. Links use a fragment consumed in memory and removed from the address bar. Acceptance requires the exact invited verified Google email, the current confirmed invitation, and a single-use Firestore transaction. Resend/reassignment invalidates previous invitations; reassignment disables previous account bindings and revokes sessions before email sending. Company suspension is rechecked throughout delivery/acceptance.
+Invitation tokens contain 32 random bytes, have a seven-day lifetime, and are stored only as SHA-256 hashes. Links use a fragment consumed in memory and removed from the address bar. Acceptance requires the exact invited verified Google email, the current confirmed invitation, and a single-use Firestore transaction. Resend/reassignment invalidates previous invitations; reassignment disables previous account bindings and revokes sessions before email sending. Company suspension is rechecked throughout delivery/acceptance.
 
 Email operations share a durable global one-request-per-second lease plus account rate limits. A confirmed provider response is required before an invitation is marked sent. Ambiguous delivery is recorded without an automatic retry to avoid duplicate emails. Provider acceptance is not proof of inbox delivery. No real email was sent during validation.
 

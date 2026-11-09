@@ -8,7 +8,7 @@ const invitation = {email: "client@example.com", status: "Sent", expiresAt: now 
 test("invitation links use a 256-bit base64url token with a bounded format", () => {
   assert.equal(validInvitationToken(token), true);
   for (const value of [null, "", "a".repeat(42), "a".repeat(44), "/".repeat(43), "=".repeat(43), token + "\n"]) assert.equal(validInvitationToken(value), false);
-  assert.equal(INVITATION_LIFETIME_MS, 172800000);
+  assert.equal(INVITATION_LIFETIME_MS, 604800000);
 });
 test("invited email normalization does not silently change account aliases", () => {
   assert.equal(normalizeInvitationEmail("  Client+Project@Example.com "), "client+project@example.com");

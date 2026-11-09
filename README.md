@@ -37,4 +37,6 @@ npm.cmd run build
 
 Browser and emulator validation instructions, security behavior, live setup requirements, and remaining integration work are in [docs/integration-handoff.md](docs/integration-handoff.md). CI performs unit tests, typechecking, and a production build; it has no deployment job.
 
+EmailJS invitation setup and the supplied template mapping are in [docs/emailjs-invitations.md](docs/emailjs-invitations.md).
+
 Historical Phase 2/3 documents record earlier milestones. The integration handoff describes the current implementation.

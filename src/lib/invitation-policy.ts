@@ -1,4 +1,4 @@
-export const INVITATION_LIFETIME_MS = 48 * 60 * 60 * 1000;
+export const INVITATION_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
 export type InvitationIdentity = {uid: string; email: string; email_verified: boolean; provider: string};
 export type InvitationState = {email: string; status: string; expiresAt: number; companyStatus: string; tokenHash: string; currentTokenHash: string | null};
 

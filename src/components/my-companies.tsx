@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Plus, Search, ArrowUpRight, Pencil, Mail, Power, Building2, X } from "lucide-react";
-import type { Company } from "@/lib/models";
+import { newId, type Company } from "@/lib/models";
 import { useWorkspace } from "./workspace-provider";
 import { CompanyLogo, Modal } from "./ui";
 
@@ -17,11 +17,12 @@ export function MyCompanies() {
   const [changingAccess, setChangingAccess] = useState(false);
   const companies = data.companies.filter(company => company.origin !== "demo" && `${company.name} ${company.assignedEmail || ""} ${data.invitations.filter(i => i.companyId === company.id).map(i => i.email).join(" ")}`.toLowerCase().includes(search.toLowerCase()));
   async function resend(company: Company) {
+    if (sending) return;
     setSending(company.id); setDeliveryError("");
     const email = company.assignedEmail || data.invitations.find(i => i.companyId === company.id && i.status !== "Suspended")?.email;
     if (!email) { router.push(`/companies/${company.id}/edit?step=3`); setSending(null); return; }
     try {
-      const response = await fetch("/api/invitations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ companyId: company.id, email, action: "resend" }) });
+      const response = await fetch("/api/invitations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ companyId: company.id, email, action: "resend", idempotencyKey: newId() }) });
       const result = await response.json();
       if (!response.ok || result.delivered !== true) throw new Error(result.error || "The email service has not confirmed delivery. No invitation was marked as sent.");
       await refreshWorkspace();

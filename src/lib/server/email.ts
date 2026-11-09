@@ -1,7 +1,8 @@
 import "server-only";
 import { invitationOrigin, normalizeInvitationEmail } from "../invitation-policy";
+import { accessibleEmailTextColor, type InvitationEmailBranding } from "../invitation-email-branding";
 
-export type InvitationEmail = {toEmail: string; companyName: string; invitationUrl: string; expiresAt: string};
+export type InvitationEmail = InvitationEmailBranding & {toEmail: string; companyName: string; invitationUrl: string; expiresAt: string};
 export type ProposalEmail = {toEmail: string; companyName: string; customerName: string; proposalUrl: string; proposalTotal: string; proposalTitle: string; expiresAt: string};
 export class EmailDeliveryError extends Error {
   constructor(public kind: "rejected" | "unknown") {super(kind === "rejected" ? "The email provider rejected the email. Nothing was confirmed as sent." : "Email delivery could not be confirmed. The request will not be automatically resent.");}
@@ -29,8 +30,11 @@ async function send(templateId: string, params: Record<string, string>): Promise
 }
 export async function sendInvitationEmail(message: InvitationEmail): Promise<void> {
   if (!invitationEmailConfigured()) throw new Error("Invitation email delivery is not configured.");
-  if (!validLink(message.toEmail, message.invitationUrl, "/invite")) throw new Error("The invitation email contains invalid information.");
-  return send(process.env.EMAILJS_INVITATION_TEMPLATE_ID!, {to_email: message.toEmail, company_name: message.companyName, invitation_url: message.invitationUrl, expires_at: message.expiresAt});
+  const origin = invitationOrigin(process.env.APP_ORIGIN, process.env.NODE_ENV !== "production")!;
+  let logo: URL;
+  try {logo = new URL(message.companyLogoUrl);} catch {throw new Error("The invitation logo URL is invalid.");}
+  if (!validLink(message.toEmail, message.invitationUrl, "/invite") || !message.companyName.trim() || /{{|}}/.test(message.companyName) || logo.origin !== origin || !/^\/api\/invitations\/logo\/[A-Za-z0-9_-]{43}\.png$/.test(logo.pathname) || logo.username || logo.password || logo.search || logo.hash || message.headerTextColor !== accessibleEmailTextColor(message.primaryColor) || message.buttonTextColor !== message.headerTextColor) throw new Error("The invitation email contains invalid information.");
+  return send(process.env.EMAILJS_INVITATION_TEMPLATE_ID!, {to_email: normalizeInvitationEmail(message.toEmail)!, company_name: message.companyName, company_logo_url: message.companyLogoUrl, primary_color: message.primaryColor, header_text_color: message.headerTextColor, button_text_color: message.buttonTextColor, invite_url: message.invitationUrl, expires_in: "7 days"});
 }
 export async function sendProposalEmail(message: ProposalEmail): Promise<void> {
   if (!proposalEmailConfigured()) throw new Error("Proposal email delivery is not configured.");

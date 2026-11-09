@@ -5,12 +5,13 @@ import { saveCompanyRecord } from "./tenant-repository";
 import { enforceRateLimit } from "./rate-limit";
 import { invitationEmailConfigured, sendInvitationEmail } from "./email";
 import { createInvitationService, InvitationError, type IssueInput } from "./invitation-core";
+import { createInvitationAssetService } from "./invitation-assets";
 import type { InvitationIdentity } from "../invitation-policy";
 export {createInvitationService} from "./invitation-core";
 
 function service() {
-  const {db, auth} = adminServices();
-  return createInvitationService({db, auth, owner: requireOwner, emailConfigured: invitationEmailConfigured, sendEmail: sendInvitationEmail, saveCompany: saveCompanyRecord, rateLimit: enforceRateLimit});
+  const {db, auth, bucket} = adminServices();
+  return createInvitationService({db, auth, owner: requireOwner, emailConfigured: invitationEmailConfigured, sendEmail: sendInvitationEmail, prepareBranding: createInvitationAssetService({db, bucket}).prepare, saveCompany: saveCompanyRecord, rateLimit: enforceRateLimit});
 }
 async function translate<T>(operation: () => Promise<T>): Promise<T> {
   try {return await operation();}
