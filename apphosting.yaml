@@ -1,0 +1,27 @@
+# Prepared for Firebase App Hosting. No backend or deployment is created by this file.
+# Configure the web-app values and server secrets in Firebase before enabling services.
+runConfig:
+  minInstances: 0
+  maxInstances: 3
+  cpu: 1
+  memoryMiB: 1024
+  concurrency: 8
+env:
+  - variable: QUOTEFORGE_DEMO_MODE
+    value: "false"
+    availability: [RUNTIME]
+  - variable: QUOTEFORGE_FIREBASE_ENABLED
+    value: "false"
+    availability: [RUNTIME]
+  - variable: QUOTEFORGE_USE_EMULATORS
+    value: "false"
+    availability: [RUNTIME]
+  - variable: FIREBASE_PROJECT_ID
+    value: "quote-forge-b153f"
+    availability: [RUNTIME]
+  - variable: FIREBASE_STORAGE_BUCKET
+    value: "quote-forge-b153f.firebasestorage.app"
+    availability: [RUNTIME]
+  - variable: EMAIL_DELIVERY_ENABLED
+    value: "false"
+    availability: [RUNTIME]

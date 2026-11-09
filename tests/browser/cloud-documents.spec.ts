@@ -1,0 +1,104 @@
+import { test, expect, type BrowserContext } from "@playwright/test";
+import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import { jsPDF } from "jspdf";
+import { createGoogleSession } from "../emulator/http-helpers.mjs";
+
+const base = process.env.EMULATOR_TEST_URL || "http://127.0.0.1:3002";
+const parsedBase = new URL(base);
+if (!["127.0.0.1", "localhost", "[::1]"].includes(parsedBase.hostname)) throw new Error("Cloud browser QA must use an isolated loopback emulator server.");
+test.use({ baseURL: base });
+
+async function authenticatedContext(context: BrowserContext, cookie: string) {
+  await context.addCookies(cookie.split("; ").filter(Boolean).map(pair => {
+    const separator = pair.indexOf("=");
+    return { name: pair.slice(0, separator), value: pair.slice(separator + 1), url: base, httpOnly: true, sameSite: "Lax" as const };
+  }));
+  await context.addInitScript(() => { if (window.top === window) localStorage.setItem("quoteforge.owner.tutorial.v1", JSON.stringify({ version: 1, status: "skipped", step: 0 })); });
+}
+
+test("cloud document extraction, private upload, saved sources and original download survive an empty browser cache", async ({ browser, context, page }) => {
+  test.skip(process.env.QUOTEFORGE_RUN_CLOUD_BROWSER_TESTS !== "true", "Requires the explicit isolated Auth/Firestore/Storage emulator QA environment.");
+  test.setTimeout(90000);
+  const session = await createGoogleSession("owner@example.com");
+  await authenticatedContext(context, session.cookie);
+  const companyId = "cloud-doc-test-" + randomUUID();
+  const company = { id: companyId, name: "Cloud Document QA", industry: "General services", email: "office@example.com", phone: "", address: "", website: "", status: "Draft", branding: { primary: "#122239", secondary: "#F5F7FA", accent: "#EE7D3B", font: "Arial", logo: "" }, fields: [], createdAt: new Date().toISOString(), origin: "owner" };
+  const created = await session.request("/api/companies", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(company) });
+  expect(created.status, await created.text()).toBe(200);
+  const pdf = new jsPDF({ unit: "pt", format: "letter" });
+  pdf.setFontSize(18); pdf.text(["CLOUD SOURCE ESTIMATE", "Install trim 4 EA at $9.25", "Source total $37.00"], 50, 90);
+  const original = Buffer.from(pdf.output("arraybuffer"));
+  const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
+  await page.goto(`/companies/${companyId}/open`);
+  await expect(page.locator(".tenant-brand")).toContainText(company.name);
+  await page.getByRole("textbox", { name: "Customer / Project Name", exact: false }).fill("Cloud QA Customer");
+  await page.getByLabel("Customer email", { exact: true }).fill("customer@example.com");
+  await page.getByLabel("Project title", { exact: true }).fill("Cloud saved source and pricing");
+  await page.getByLabel("Upload quote documents").setInputFiles({ name: "cloud-source-estimate.pdf", mimeType: "application/pdf", buffer: original });
+  await expect(page.locator('.source-document[data-document-status="ready"]')).toHaveCount(1, { timeout: 30000 });
+  await expect(page.getByLabel("Extracted text from cloud-source-estimate.pdf")).toHaveValue(/Install trim 4 EA at \$9\.25/);
+  await page.getByRole("button", { name: "Add line item", exact: true }).click();
+  await page.getByLabel("Line 1 description", { exact: true }).fill("Install trim");
+  await page.getByLabel("Line 1 quantity", { exact: true }).fill("4");
+  await page.getByLabel("Line 1 unit price", { exact: true }).fill("9.25");
+  await expect(page.locator(".preview-total strong")).toHaveText("$37.00");
+  const savedResponse = page.waitForResponse(response => response.url().endsWith(`/api/tenants/${companyId}/drafts`) && response.request().method() === "POST");
+  await page.getByRole("button", { name: "Save draft", exact: true }).click();
+  const response = await savedResponse;
+  const body = await response.json();
+  expect(response.status(), JSON.stringify(body)).toBe(200);
+  expect(body.record.sourceInput.documents[0].storagePath).toMatch(new RegExp(`^companies/${companyId}/documents/`));
+  await expect(page.locator(".toast")).toContainText("Draft and customer saved");
+  await page.reload(); await page.getByRole("button", { name: /Saved drafts/ }).click();
+  await page.locator(".draft-list>button").filter({hasText: "Cloud saved source and pricing"}).click();
+  await expect(page.getByLabel("Extracted text from cloud-source-estimate.pdf")).toHaveValue(/Install trim 4 EA at \$9\.25/);
+  await expect(page.getByLabel("Line 1 quantity", { exact: true })).toHaveValue("4");
+  await expect(page.getByLabel("Line 1 unit price", { exact: true })).toHaveValue("9.25");
+  const sourceText = await page.getByLabel("Extracted text from cloud-source-estimate.pdf").inputValue();
+  await page.getByRole("checkbox", { name: /reviewed the scope, quantities, and pricing/ }).check();
+  await expect(page.locator(".review-flag")).toHaveCount(0);
+  await page.getByRole("button", { name: "Send proposal", exact: true }).click();
+  const sendDialog = page.getByRole("dialog").filter({ has: page.getByRole("heading", { name: "A proposal worth sharing", exact: true }) });
+  await expect(sendDialog).toContainText("customer@example.com");
+  const reviewedSaveResponse = page.waitForResponse(value => value.url().endsWith(`/api/tenants/${companyId}/drafts`) && value.request().method() === "POST");
+  const heldSendResponse = page.waitForResponse(value => value.url().endsWith(`/api/tenants/${companyId}/proposals/send`) && value.request().method() === "POST");
+  await sendDialog.getByRole("button", { name: "Save & email proposal", exact: true }).click();
+  const reviewedSave = await reviewedSaveResponse;
+  const reviewedBody = await reviewedSave.json();
+  expect(reviewedSave.status(), JSON.stringify(reviewedBody)).toBe(200);
+  expect(reviewedBody.record.reviewed).toBe(true);
+  expect(reviewedBody.record.lineItems.every((item: { needsReview: boolean }) => item.needsReview === false)).toBe(true);
+  expect(reviewedBody.record.sourceInput.documents[0].extractedText).toBe(sourceText);
+  expect(reviewedBody.record.sourceInput.documents[0].storagePath).toBe(body.record.sourceInput.documents[0].storagePath);
+  const heldSend = await heldSendResponse;
+  const heldBody = await heldSend.json();
+  expect(heldSend.status(), JSON.stringify(heldBody)).toBe(503);
+  expect(heldBody.error).toBe("Proposal email delivery is not configured. Your saved proposal has been kept; no email was sent.");
+  await expect(page.locator(".toast")).toContainText(heldBody.error);
+  await expect(sendDialog.getByRole("button", { name: "Save & email proposal", exact: true })).toBeEnabled();
+  await sendDialog.getByRole("button", { name: "Close dialog" }).click();
+  await expect(page.getByRole("checkbox", { name: /reviewed the scope, quantities, and pricing/ })).toBeChecked();
+  await expect(page.getByLabel("Extracted text from cloud-source-estimate.pdf")).toHaveValue(sourceText);
+  await expect(page.locator(".preview-total strong")).toHaveText("$37.00");
+  const fresh = await browser.newContext({ baseURL: base, acceptDownloads: true });
+  try {
+    await authenticatedContext(fresh, session.cookie);
+    const restored = await fresh.newPage();
+    restored.on("pageerror", error => errors.push(error.message));
+    await restored.goto(`/companies/${companyId}/open`);
+    await restored.getByRole("button", { name: /Saved drafts/ }).click();
+    await restored.locator(".draft-list>button").filter({hasText: "Cloud saved source and pricing"}).click();
+    await expect(restored.getByLabel("Extracted text from cloud-source-estimate.pdf")).toHaveValue(/Install trim 4 EA at \$9\.25/);
+    await expect(restored.locator(".preview-total strong")).toHaveText("$37.00");
+    await expect(restored.getByRole("checkbox", { name: /reviewed the scope, quantities, and pricing/ })).toBeChecked();
+    await expect(restored.locator(".review-flag")).toHaveCount(0);
+    const privateFileResponse = restored.waitForResponse(value => value.url().includes(`/api/tenants/${companyId}/documents/`) && value.request().method() === "GET");
+    const downloadPromise = restored.waitForEvent("download");
+    await restored.getByRole("button", { name: "Download original cloud-source-estimate.pdf", exact: true }).click();
+    expect((await privateFileResponse).status()).toBe(200);
+    const download = await downloadPromise; expect(download.suggestedFilename()).toBe("cloud-source-estimate.pdf");
+    const path = await download.path(); expect(path).not.toBeNull(); expect((await readFile(path!)).equals(original)).toBe(true);
+  } finally { await fresh.close(); }
+  expect(errors).toEqual([]);
+});

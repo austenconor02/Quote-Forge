@@ -1,0 +1,78 @@
+.proposal-letter{border-radius:3px;overflow:hidden;min-width:0}
+.proposal-letter .proposal-top-banner{display:flex;align-items:center;gap:18px;padding:23px 26px;background:var(--tenant-primary);color:var(--tenant-on-primary);min-height:90px}
+.proposal-letter .proposal-logo-pane{width:90px;height:59px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.proposal-letter .proposal-logo-pane img{width:100%;height:100%;object-fit:contain}
+.proposal-letter .proposal-top-banner>div:last-child{min-width:0}
+.proposal-letter .proposal-top-banner strong{display:block;font-size:10px;line-height:1.5;font-weight:600;letter-spacing:.25px;overflow-wrap:anywhere}
+.proposal-letter .proposal-top-banner>div>span{display:block;font-size:25px;font-weight:600;letter-spacing:-.7px;line-height:1.25;margin-top:7px}
+.proposal-letter .proposal-inner{padding:29px 26px 19px}
+.proposal-letter .proposal-prepared-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(100px,.65fr);gap:21px}
+.proposal-letter .proposal-customer>span{font-size:9px;font-weight:600;color:var(--tenant-primary);letter-spacing:0}
+.proposal-letter .proposal-customer>strong{font-size:12px;font-weight:400;color:#526475;line-height:1.5;margin:9px 0 5px;overflow-wrap:anywhere}
+.proposal-letter .proposal-customer p{font-size:8px;line-height:1.8;color:#8b98a4;overflow-wrap:anywhere}
+.proposal-letter .proposal-reference{margin:0;font-size:8px;line-height:1.8;color:#8995a3}
+.proposal-letter .proposal-reference>div{display:flex;align-items:flex-start;gap:4px;margin-bottom:5px}
+.proposal-letter .proposal-reference dt{white-space:nowrap;flex-shrink:0}
+.proposal-letter .proposal-reference dd{margin:0;overflow-wrap:anywhere;min-width:0}
+.proposal-letter .proposal-project-title{font-size:12px;font-weight:600;letter-spacing:-.1px;margin:15px 0 0;line-height:1.6}
+.proposal-letter .proposal-custom{margin:13px 0 0;gap:9px 15px}
+.proposal-letter .proposal-custom dt{font-size:7px;letter-spacing:0;line-height:1.7}
+.proposal-letter .proposal-custom dd{font-size:8px;line-height:1.7}
+.proposal-letter .proposal-rule{margin:20px 0;background:var(--tenant-accent);height:2px;opacity:1}
+.proposal-letter .proposal-scope-heading{font-size:15px;font-weight:600;letter-spacing:-.3px;line-height:1.5;margin:0 0 15px}
+.proposal-letter .proposal-sections{margin:0}
+.proposal-letter .proposal-sections>section{margin-bottom:20px;break-inside:avoid}
+.proposal-letter .proposal-sections h3{background:var(--tenant-primary);color:var(--tenant-on-primary);font-size:9px;font-weight:600;line-height:1.6;padding:8px 10px}
+.proposal-letter .proposal-line-head,.proposal-letter .proposal-line{display:grid;grid-template-columns:minmax(0,1fr) 37px 68px 70px;gap:8px;padding:10px;align-items:start}
+.proposal-letter .proposal-line-head{font-size:7px;letter-spacing:0;background:var(--tenant-secondary);color:var(--tenant-on-secondary);line-height:1.5;padding-top:7px;padding-bottom:7px}
+.proposal-letter .proposal-line{font-size:8px;color:#687b8c;border:1px solid #e3e8ec;border-top:0;line-height:1.8}
+.proposal-letter .proposal-line-head>span:nth-child(2),.proposal-letter .proposal-line>span:nth-child(2){text-align:right;white-space:nowrap}
+.proposal-letter .proposal-line-head>span:nth-child(3),.proposal-letter .proposal-line>span:nth-child(3),.proposal-letter .proposal-line-head>span:nth-child(4),.proposal-letter .proposal-line>strong{text-align:right;white-space:nowrap;letter-spacing:-.05px}
+.proposal-letter .proposal-section-subtotal{display:flex;justify-content:space-between;gap:15px;padding:8px 10px;background:var(--tenant-secondary);color:var(--tenant-on-secondary);font-size:8px}
+.proposal-letter .proposal-section-subtotal strong{font-weight:500}
+.proposal-letter .proposal-totals{width:56%;margin:20px 0 26px auto;padding:9px;border-radius:6px;background:var(--tenant-secondary);font-size:9px}
+.proposal-letter .proposal-totals>div{padding:6px;color:var(--tenant-on-secondary)}
+.proposal-letter .proposal-totals>div.proposal-grand-total{border-top:1px solid var(--tenant-accent);border-radius:0;background:transparent;color:var(--tenant-on-secondary);margin-top:4px;padding:10px 6px 5px;font-size:11px}
+.proposal-letter .proposal-grand-total>strong{font-weight:600}
+.proposal-letter .proposal-public-notes,.proposal-letter .proposal-approval{margin-top:21px;break-inside:avoid}
+.proposal-letter .proposal-public-notes>h3,.proposal-letter .proposal-approval>h3{background:var(--tenant-primary);color:var(--tenant-on-primary);font-size:10px;font-weight:600;padding:8px 10px;letter-spacing:0}
+.proposal-letter .proposal-public-notes>p,.proposal-letter .proposal-approval>div{border:1px solid #e3e8ec;border-top:0;padding:12px 10px;min-height:47px;font-size:8px;line-height:1.8;color:#7f8f9d;white-space:pre-wrap;overflow-wrap:anywhere}
+.proposal-letter .proposal-approval>div>p{font-size:8px;line-height:1.8;margin:0}
+.proposal-letter .proposal-signature{display:grid;grid-template-columns:1.5fr 1fr;gap:20px;margin-top:25px}
+.proposal-letter .proposal-signature>span{display:flex;align-items:center;gap:7px;white-space:nowrap}
+.proposal-letter .proposal-signature i{border-bottom:1px solid #cdd6df;flex:1;min-width:0}
+.proposal-letter .proposal-footer{font-size:6px;line-height:1.8;color:#a3adb7;gap:15px;margin-top:25px;padding-top:12px;border-color:#dfe5ec}
+.proposal-letter .proposal-footer>span:first-child{flex:1;overflow-wrap:anywhere}
+.proposal-letter .proposal-footer>span:last-child{white-space:nowrap;flex-shrink:0}
+.proposal-letter .proposal-no-items{font-size:9px;line-height:1.8;color:#9ba7b2;padding:10px 0}
+.proposal-letter.miniature .proposal-top-banner{gap:10px;padding:15px 13px;min-height:67px}
+.proposal-letter.miniature .proposal-logo-pane{width:52px;height:37px}
+.proposal-letter.miniature .proposal-top-banner strong{font-size:6px;letter-spacing:0}
+.proposal-letter.miniature .proposal-top-banner>div>span{font-size:16px;letter-spacing:-.3px;margin-top:5px}
+.proposal-letter.miniature .proposal-inner{padding:18px 13px 13px}
+.proposal-letter.miniature .proposal-prepared-grid{grid-template-columns:minmax(0,1fr) minmax(65px,.8fr);gap:12px}
+.proposal-letter.miniature .proposal-customer>span{font-size:6px}
+.proposal-letter.miniature .proposal-customer>strong{font-size:8px;margin-top:6px}
+.proposal-letter.miniature .proposal-customer p{font-size:5px}
+.proposal-letter.miniature .proposal-reference{font-size:5px}
+.proposal-letter.miniature .proposal-project-title{font-size:9px;margin-top:12px}
+.proposal-letter.miniature .proposal-custom dt{font-size:5px}
+.proposal-letter.miniature .proposal-custom dd{font-size:5px}
+.proposal-letter.miniature .proposal-rule{margin:15px 0;height:1px}
+.proposal-letter.miniature .proposal-scope-heading{font-size:10px;margin-bottom:10px}
+.proposal-letter.miniature .proposal-sections h3{font-size:6px;padding:6px}
+.proposal-letter.miniature .proposal-line-head,.proposal-letter.miniature .proposal-line{grid-template-columns:minmax(0,1fr) 27px 48px 49px;gap:4px;padding:7px 6px}
+.proposal-letter.miniature .proposal-line-head{font-size:4.5px;padding-top:5px;padding-bottom:5px}
+.proposal-letter.miniature .proposal-line{font-size:5.5px;line-height:1.8}
+.proposal-letter.miniature .proposal-section-subtotal{font-size:5.5px;padding:6px}
+.proposal-letter.miniature .proposal-sections>section{margin-bottom:13px}
+.proposal-letter.miniature .proposal-totals{font-size:6px;width:70%;padding:5px;margin:15px 0 18px auto}
+.proposal-letter.miniature .proposal-totals>div{padding:4px}
+.proposal-letter.miniature .proposal-totals>div.proposal-grand-total{font-size:8px;padding:7px 4px 4px}
+.proposal-letter.miniature .proposal-public-notes>h3,.proposal-letter.miniature .proposal-approval>h3{font-size:7px;padding:6px}
+.proposal-letter.miniature .proposal-public-notes>p,.proposal-letter.miniature .proposal-approval>div{padding:8px 6px;font-size:5.5px;min-height:35px}
+.proposal-letter.miniature .proposal-approval>div>p{font-size:5.5px}
+.proposal-letter.miniature .proposal-signature{gap:11px;margin-top:18px}
+.proposal-letter.miniature .proposal-signature>span{gap:4px}
+.proposal-letter.miniature .proposal-footer{font-size:4.5px;gap:8px;margin-top:19px}
+@media print{.proposal-letter{box-shadow:none;border:0}.proposal-letter .proposal-top-banner,.proposal-letter .proposal-sections h3,.proposal-letter .proposal-line-head,.proposal-letter .proposal-section-subtotal,.proposal-letter .proposal-public-notes>h3,.proposal-letter .proposal-approval>h3{-webkit-print-color-adjust:exact;print-color-adjust:exact}.proposal-letter .proposal-line,.proposal-letter .proposal-section-subtotal{break-inside:avoid}.proposal-letter .proposal-line-head{break-after:avoid}}

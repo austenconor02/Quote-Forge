@@ -1,0 +1,10 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Private files are read and written only through authenticated server endpoints.
+    // Those endpoints verify Google identity, root access assignment, active company,
+    // and enabled membership before using the Admin SDK. No public download tokens are issued.
+    match /companies/{companyId}/proposals/{path=**} { allow read, write: if false; }
+    match /{path=**} { allow read, write: if false; }
+  }
+}

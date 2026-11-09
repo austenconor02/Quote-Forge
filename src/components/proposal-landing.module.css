@@ -1,0 +1,14 @@
+.page {min-height:100vh;background:#eef2f7;color:#17283d;padding:32px max(18px,calc((100vw - 1100px)/2));font-family:Arial,sans-serif;box-sizing:border-box}
+.header {display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:24px}
+.header h1 {margin:6px 0 8px;font-size:30px;line-height:1.15;letter-spacing:-.5px}
+.header p {color:#52637a;line-height:1.5;margin:0;font-size:14px}
+.header .eyebrow {font-size:11px;font-weight:700;letter-spacing:1.5px;color:#38506e}
+.download {display:inline-flex;align-items:center;justify-content:center;border-radius:9px;padding:13px 20px;background:#173451;color:#fff;font-weight:700;font-size:14px;text-decoration:none;white-space:nowrap}
+.download:hover {background:#254a70}
+.download:focus-visible {outline:3px solid #5c92c6;outline-offset:3px}
+.preview {width:100%;height:calc(100vh - 225px);min-height:550px;display:block;border:1px solid #d4dce7;border-radius:10px;background:#fff;box-shadow:0 5px 24px #142c4810}
+.message {padding:60px 24px;text-align:center;background:#fff;border:1px solid #d4dce7;border-radius:10px;min-height:190px}
+.message h2 {font-size:21px;margin:0 0 12px}
+.message p {color:#52637a;line-height:1.6;max-width:520px;margin:auto}
+.footer {font-size:12px;color:#5d6c80;line-height:1.6;text-align:center;margin:18px 0 0}
+@media(max-width:600px) {.page{padding:24px 14px}.header{align-items:flex-start;flex-direction:column;gap:16px}.header h1{font-size:26px}.download{width:100%;box-sizing:border-box}.preview{height:70vh;min-height:430px}.footer{text-align:left}}

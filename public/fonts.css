@@ -1,0 +1,2 @@
+/* Uses locally available fonts; no third-party font requests or build-time fetches. */
+@font-face{font-family:Inter;src:local("Inter"),local("Inter Regular");font-style:normal;font-weight:100 900;font-display:swap}

@@ -1,0 +1,10 @@
+{
+  "language": "English",
+  "upstream": "https://github.com/tesseract-ocr/tessdata_fast",
+  "upstreamFile": "eng.traineddata",
+  "license": "Apache-2.0",
+  "licenseFile": "LICENSE",
+  "uncompressedSha256": "7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2",
+  "gzipSha256": "44502d85a12b9598d68a773d17c0949b52bce2261387de4c7719f1e4420d279d",
+  "serving": "The gzip model is served from the same application origin. Source document contents never leave the browser for OCR."
+}
