@@ -11,7 +11,8 @@ export type Company = {
 };
 export function companyProfile(company: Company) {const {billing: _billing, ...profile} = company; return profile;}
 export type Customer = { id: string; companyId: string; name: string; email: string; phone: string; address: string };
-export type LineItem = { id: string; description: string; section: string; quantity: number; unit: string; unitPrice: number; hiddenFromProposal: boolean; needsReview: boolean; sourceType?: string; confidence?: string };
+export type SourceReference = {sourceId: string; sourceName: string; page: number | null; excerpt: string};
+export type LineItem = { id: string; description: string; section: string; quantity: number; unit: string; unitPrice: number; hiddenFromProposal: boolean; needsReview: boolean; sourceType?: string; confidence?: string; sourceReason?: string; sourceReferences?: SourceReference[] };
 export type QuoteSourceDocument = {
   id: string; name: string; size: number; mimeType: string;
   status: "pending" | "processing" | "ready" | "error";
@@ -29,6 +30,7 @@ export type Quote = {
   markupType: "none" | "percent" | "fixed"; markupValue: number; privateAdjustment: number; taxRate: number;
   customValues: Record<string, string | boolean>; notes: string; updatedAt: string; reviewed: boolean;
   sourceInput?: QuoteSourceInput;
+  aiDraft?: {jobId: string; model: string; generatedAt: string; warnings: string[]};
 };
 export type Invitation = { id: string; companyId: string; email: string; status: "Prepared" | "Sent" | "Active" | "Suspended"; createdAt: string };
 export type Activity = { id: string; title: string; description: string; at: string; kind: "company" | "branding" | "invite" | "quote" | "field" };

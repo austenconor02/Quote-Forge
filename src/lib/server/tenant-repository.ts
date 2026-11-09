@@ -131,7 +131,7 @@ async function quoteForUi(companyId: string, input: FirebaseFirestore.DocumentDa
     record.sourceInput = JSON.parse(bytes.toString("utf8"));
   }
   if (!hydrateSource) delete record.sourceInput;
-  const publicFields = ["id", "companyId", "title", "customer", "lineItems", "markupType", "markupValue", "privateAdjustment", "taxRate", "customValues", "notes", "updatedAt", "reviewed", "sourceInput"];
+  const publicFields = ["id", "companyId", "title", "customer", "lineItems", "markupType", "markupValue", "privateAdjustment", "taxRate", "customValues", "notes", "updatedAt", "reviewed", "sourceInput", "aiDraft"];
   const result = Object.fromEntries(publicFields.filter(key => record[key] !== undefined).map(key => [key, record[key]]));
   if (!hydrateSource) result.sourceLoaded = false;
   return result as Quote;

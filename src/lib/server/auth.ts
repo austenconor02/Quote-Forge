@@ -6,7 +6,8 @@ import { designatedOwnerUid } from "./owner-account";
 import { canAccessTenant, isOwner, localDemoAllowed, Identity } from "../access-policy";
 import { billingAccessAllowed } from "../billing-policy";
 
-export class AccessError extends Error { constructor(public status: number, message: string) { super(message); } }
+import { AccessError } from "./access-error";
+export { AccessError } from "./access-error";
 export async function isLocalDemo() {
   if (process.env.QUOTEFORGE_FIREBASE_ENABLED === "true") return false;
   return localDemoAllowed((await headers()).get("host") || "", process.env.QUOTEFORGE_DEMO_MODE, process.env.NODE_ENV);

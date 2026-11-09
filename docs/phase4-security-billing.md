@@ -75,7 +75,7 @@ The owner supplied sandbox Price ID `price_1UZzgz2cpYmPAH1oPaO3jFk8` for USD 99.
 
 EmailJS's invitation template remains `template_ho1ym4c` on service `service_mk2cjul`. A separate billing template uses `to_email`, `company_name`, `company_logo_url`, `primary_color`, `header_text_color`, `button_text_color`, `billing_url`, and `monthly_price`. Set To Email to `{{to_email}}`. Keep keys in server secrets; never prefix them `NEXT_PUBLIC_`. Provider acceptance is required before showing a send as confirmed. Unknown delivery is not automatically retried.
 
-Automatic AI generation still needs its original missing server engine and independent provider configuration. Existing document processing, manual quotes, unit-price PDFs, invitations, and saved data paths are preserved.
+The owner-approved OpenAI source-compilation backend is now implemented. See [OpenAI integration](openai-integration.md) for server configuration, source-linked draft behavior, company isolation, tests, and remaining activation steps. Existing document processing, manual quotes, unit-price PDFs, invitations, and saved data paths are preserved.
 
 Live checks on November 9, 2026 confirmed the Google login page, redirect to login for anonymous visitors, rejection of unauthenticated private-data requests, and the disabled Stripe webhook. An isolated browser loaded the deployed OCR worker, core, and English model and correctly recognized `QUOTEFORGE OCR TEST` and `TOTAL $99.00` from a generated image. The first local Google sign-in established the verified owner UID; signed-in use of the deployed My Companies page still awaits the owner's browser confirmation. No real Stripe payment or email was sent.
 

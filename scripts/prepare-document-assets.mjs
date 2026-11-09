@@ -10,6 +10,7 @@ const core = resolve(require.resolve("tesseract.js-core/package.json"), "..");
 await mkdir(join(output, "tesseract/core"), { recursive: true });
 await mkdir(join(output, "tesseract/lang"), { recursive: true });
 await copyFile(join(pdf, "build/pdf.worker.min.mjs"), join(output, "pdf.worker.min.mjs"));
+await copyFile(join(pdf, "build/pdf.min.mjs"), join(output, "pdf.min.mjs"));
 for (const directory of ["cmaps", "standard_fonts", "wasm"]) await cp(join(pdf, directory), join(output, "pdfjs", directory), { recursive: true });
 await copyFile(join(pdf, "LICENSE"), join(output, "pdfjs/LICENSE"));
 await copyFile(join(ocr, "dist/worker.min.js"), join(output, "tesseract/worker.min.js"));

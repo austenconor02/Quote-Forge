@@ -6,6 +6,14 @@ import { ref, uploadBytes, getBytes } from "firebase/storage";
 let env: RulesTestEnvironment;
 let previousPlatformConfig: Record<string, unknown> | null = null;
 const verifiedGoogle = {email_verified: true, firebase: {sign_in_provider: "google.com"}} as const;
+test("AI job results and generation leases cannot be accessed through browser SDKs", async () => {
+  await env.withSecurityRulesDisabled(async context => {await setDoc(doc(context.firestore(), "companies/a/aiJobs/private-job"), {uid: "alice", result: {lineItems: []}});});
+  for (const [uid, claims] of [["alice", verifiedGoogle], ["bob", verifiedGoogle], ["sole-owner", {...verifiedGoogle, platformOwner: true}]] as const) {
+    const db = env.authenticatedContext(uid,claims).firestore();
+    await assertFails(getDoc(doc(db,"companies/a/aiJobs/private-job")));
+    await assertFails(setDoc(doc(db,"companies/a/aiJobs/lease"),{until:0}));
+  }
+});
 before(async () => {
   env = await initializeTestEnvironment({projectId: "demo-quoteforge-rules", firestore: {host: "127.0.0.1", port: 8080, rules: readFileSync("firestore.rules", "utf8")}, storage: {host: "127.0.0.1", port: 9199, rules: readFileSync("storage.rules", "utf8")}});
   await env.withSecurityRulesDisabled(async context => {

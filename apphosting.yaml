@@ -25,6 +25,15 @@ env:
   - variable: EMAIL_DELIVERY_ENABLED
     value: "false"
     availability: [RUNTIME]
+  - variable: QUOTEFORGE_AI_ENABLED
+    value: "true"
+    availability: [RUNTIME]
+  - variable: OPENAI_API_KEY
+    secret: "QUOTEFORGE_OPENAI_API_KEY@1"
+    availability: [RUNTIME]
+  - variable: OPENAI_MODEL
+    value: "gpt-5.4-mini-2026-03-17"
+    availability: [RUNTIME]
 
   - variable: QUOTEFORGE_OWNER_EMAIL
     value: "austenconor02@gmail.com"

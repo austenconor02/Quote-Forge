@@ -52,6 +52,7 @@ service cloud.firestore {
       match /branding/{id} { allow read: if access(companyId); allow write: if false; }
       match /fields/{id} { allow read: if access(companyId); allow write: if false; }
       match /aiConfig/{id} { allow read: if owner(); allow write: if false; }
+      match /aiJobs/{id} { allow read, write: if false; }
       match /invitations/{id} { allow read: if owner(); allow write: if false; }
       match /{collection}/{id} {
         allow read: if collection in ['customers', 'quotes', 'drafts', 'documents', 'proposals'] && access(companyId);

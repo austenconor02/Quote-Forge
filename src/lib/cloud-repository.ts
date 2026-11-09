@@ -1,5 +1,5 @@
 "use client";
-import type { Customer, Quote, QuoteSourceDocument } from "./models";
+import type { Customer, Quote, QuoteSourceDocument, QuoteSourceInput } from "./models";
 import { tenantWorkspaceSchema } from "./workspace-schema";
 import { getDocumentFile } from "./documents/local-files";
 
@@ -47,17 +47,20 @@ export async function sourceFileFromCloud(companyId: string, document: QuoteSour
   if (!response.ok) throw new Error("This source document could not be downloaded. Check your company access and try again.");
   return new File([await response.blob()], document.name, {type: document.mimeType});
 }
-export async function saveCloudDraft(quote: Quote): Promise<Quote> {
+export async function uploadCloudSources(companyId: string, sourceInput: QuoteSourceInput): Promise<QuoteSourceInput> {
   const documents: QuoteSourceDocument[] = [];
-  for (const document of quote.sourceInput?.documents || []) {
+  for (const document of sourceInput.documents) {
     if (document.status === "processing" || document.status === "pending") throw new Error(`Wait for ${document.name} to finish processing before saving to the cloud.`);
     if (document.storagePath) {documents.push(document); continue;}
     const file = await getDocumentFile(document.id);
     if (!file) throw new Error(`Reselect ${document.name} before saving. Its source file is not available in this browser.`);
-    const {document: uploaded} = await cloudRequest(`/api/tenants/${quote.companyId}/documents/${document.id}`, {method: "POST", headers: {"Content-Type": file.type || "application/octet-stream", "x-file-name": encodeURIComponent(document.name)}, body: file});
+    const {document: uploaded} = await cloudRequest(`/api/tenants/${companyId}/documents/${document.id}`, {method: "POST", headers: {"Content-Type": file.type || "application/octet-stream", "x-file-name": encodeURIComponent(document.name)}, body: file});
     documents.push({...document, name: uploaded.name, mimeType: uploaded.mimeType, size: uploaded.size, storagePath: uploaded.storagePath, sha256: uploaded.sha256});
   }
-  const ready = {...quote, ...(quote.sourceInput ? {sourceInput: {...quote.sourceInput, documents}} : {})};
+  return {...sourceInput, documents};
+}
+export async function saveCloudDraft(quote: Quote): Promise<Quote> {
+  const ready = {...quote, ...(quote.sourceInput ? {sourceInput: await uploadCloudSources(quote.companyId, quote.sourceInput)} : {})};
   const {record} = await cloudRequest(`/api/tenants/${quote.companyId}/drafts`, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(ready)});
   return record;
 }

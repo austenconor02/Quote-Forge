@@ -14,7 +14,7 @@ Company-specific quoting workspaces built with Next.js, Firebase Auth, Firestore
 - Expiring, single-use invitation links and server-side EmailJS delivery. Email delivery remains disabled until templates and keys are configured.
 - Reviewed proposals can be sent through the same held delivery service as private, expiring PDF links. See [proposal delivery setup](docs/proposal-delivery.md).
 
-The confirmed Firebase project is `quote-forge-54595`; owner Google UID setup and the App Hosting deployment are complete. Deployment/security and Stripe setup are documented in [docs/phase4-security-billing.md](docs/phase4-security-billing.md). Stripe and email delivery stay disabled until configured. The original AI generation engine (`functions/index.js`) was absent from the supplied references, so automatic generation remains disabled. OCR does not generate prices or scope.
+The confirmed Firebase project is `quote-forge-54595`; owner Google UID setup and the App Hosting deployment are complete. Deployment/security and Stripe setup are documented in [docs/phase4-security-billing.md](docs/phase4-security-billing.md). Stripe and email delivery stay disabled until configured. The new server-side OpenAI workflow compiles PDFs, images, and pasted sources into categorized, source-linked drafts for manual review. See [OpenAI setup, limits, and verification](docs/openai-integration.md); generation requires its own server credentials and explicit runtime enable flag. OCR alone does not generate prices or scope.
 
 ## Local preview
 

@@ -36,9 +36,9 @@ Supported: PDF, PNG, JPEG, WebP, HEIC, and HEIF. PDF selectable text is extracte
 
 Limits include ten documents per quote, 20 MB per original, 30 pages per PDF, 200,000 extracted characters per file, image/render pixel caps, a three-minute timeout per extraction, and bounded concurrency. Individual files expose progress, cancel/remove, retry, source text, and original download. Failed or unfinished sources cannot be silently treated as successfully processed. OCR accuracy depends on source quality; users review the result and pricing before sharing.
 
-Worker code, PDF fonts/maps, WASM, and English trained data use same-origin URLs. Source content is not sent to an external OCR endpoint. Cloud upload happens when the user saves a draft.
+Worker code, PDF fonts/maps, WASM, and English trained data use same-origin URLs. Source content is not sent to an external OCR endpoint. Cloud upload happens when the user saves a draft or explicitly confirms AI compilation.
 
-Automatic AI quote generation remains unavailable because the original referenced server engine was not supplied. A future integration needs that source (or an explicitly approved replacement workflow), independent provider credentials, and review of its source-to-line-item behavior. No fabricated AI results are returned.
+The owner approved the new OpenAI source-compilation backend. It analyzes selected original PDFs/images and pasted scope, returns categorized/source-linked editable items, flags uncertain prices, and requires review before sharing. Its shared server key, company isolation, limits, failure recovery, retention boundaries, and actual verification are documented in [OpenAI integration](openai-integration.md). Generation requires server configuration and explicit enablement; there is no fixture fallback in the product.
 
 ## Invitations and email
 
@@ -111,6 +111,6 @@ $env:QUOTEFORGE_RUN_CLOUD_BROWSER_TESTS='true'
 npm.cmd run test:browser -- cloud-documents.spec.ts
 ```
 
-The cloud browser test extracts a real PDF, enters manual pricing, saves it through the real server/emulator routes, reloads the saved source, and verifies original download bytes from a fresh browser context. Production Firebase provisioning and App Hosting deployment are complete. The live login page, real public Google SDK configuration, anonymous private-data denial, and hosted OCR recognition were verified on November 9, 2026. The owner completed the first local Google sign-in; signed-in use of the deployed owner dashboard still awaits browser confirmation. Real EmailJS delivery and automatic AI generation remain unverified and disabled.
+The cloud browser test extracts a real PDF, enters manual pricing, saves it through the real server/emulator routes, reloads the saved source, and verifies original download bytes from a fresh browser context. Production Firebase provisioning and App Hosting deployment are complete. The live login page, real public Google SDK configuration, anonymous private-data denial, and hosted OCR recognition were verified on November 9, 2026. The owner confirmed signed-in access to the deployed My Companies page. The new AI workflow passed a browser/emulator edit/save/reopen/PDF test and a real OpenAI call with synthetic PDF/image inputs; see its integration document for exact boundaries. Real EmailJS delivery remains disabled and unverified.
 
 The Firebase SDK/Admin dependencies were updated and audited. Targeted overrides pin patched gRPC/rimraf dependencies and Node 22-compatible Firebase app peers. Review these pins when upgrading Firebase rather than removing them without an audit.

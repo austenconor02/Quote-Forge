@@ -83,7 +83,8 @@ export async function processDocument(file: File, options: Options = {}): Promis
     report(.01, "Opening document");
     const kind = documentType(file.name);
     if (kind === "pdf") {
-      const pdfjs = await import("pdfjs-dist");
+      // Keep PDF.js's ESM module intact across both Next.js bundlers, paired with the same-version worker.
+      const pdfjs = await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ absolute(`${ASSETS}/pdf.min.mjs`)) as typeof import("pdfjs-dist");
       checkAbort(signal);
       pdfjs.GlobalWorkerOptions.workerSrc = absolute(`${ASSETS}/pdf.worker.min.mjs`);
       loading = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false, useSystemFonts: true, cMapUrl: absolute(`${ASSETS}/pdfjs/cmaps/`), cMapPacked: true, standardFontDataUrl: absolute(`${ASSETS}/pdfjs/standard_fonts/`), wasmUrl: absolute(`${ASSETS}/pdfjs/wasm/`) });

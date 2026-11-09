@@ -17,12 +17,14 @@ const sourceDocument = z.object({
   extractedText: text(200000).optional(), pageCount: z.number().int().min(1).max(30).optional(), storagePath: text(500).optional(), textStoragePath: text(500).optional(), sha256: z.string().regex(/^[a-f0-9]{64}$/i).optional(),
   extractionMethod: z.enum(["embedded", "ocr", "mixed"]).optional(), localFileAvailable: z.boolean().optional()
 }).strict();
-const lineItem = z.object({id: identifierSchema, description: text(10000), section: text(200), quantity: z.number().finite().min(0).max(1000000), unit: text(30), unitPrice: z.number().finite().min(0).max(1000000), hiddenFromProposal: z.boolean(), needsReview: z.boolean(), sourceType: text(100).optional(), confidence: text(30).optional(), sourceDocumentName: text(255).optional(), sourceReason: text(5000).optional()}).strict();
+const sourceReference = z.object({sourceId: identifierSchema, sourceName: text(255), page: z.number().int().min(1).max(40).nullable(), excerpt: text(500)}).strict();
+const lineItem = z.object({id: identifierSchema, description: text(10000), section: text(200), quantity: z.number().finite().min(0).max(1000000), unit: text(30), unitPrice: z.number().finite().min(0).max(1000000), hiddenFromProposal: z.boolean(), needsReview: z.boolean(), sourceType: text(100).optional(), confidence: text(30).optional(), sourceDocumentName: text(255).optional(), sourceReason: text(5000).optional(), sourceReferences: z.array(sourceReference).max(9).optional()}).strict();
 export const quoteInputSchema = z.object({
   id: identifierSchema, companyId: identifierSchema, title: text(250), customer: customerInputSchema, lineItems: z.array(lineItem).max(1000),
   markupType: z.enum(["none", "percent", "fixed"]), markupValue: z.number().finite().min(0).max(1000000), privateAdjustment: z.number().finite().min(-1000000000).max(1000000000), taxRate: z.number().finite().min(0).max(100),
   customValues: z.record(identifierSchema, z.union([text(20000), z.boolean()])), notes: text(100000), updatedAt: text(50), reviewed: z.boolean(),
-  sourceInput: z.object({pastedText: text(1000000), specialInstructions: text(20000), documents: z.array(sourceDocument).max(30)}).strict().optional()
+  sourceInput: z.object({pastedText: text(1000000), specialInstructions: text(20000), documents: z.array(sourceDocument).max(30)}).strict().optional(),
+  aiDraft: z.object({jobId: z.string().uuid(), model: text(100), generatedAt: text(50), warnings: z.array(text(500)).max(60)}).strict().optional()
 }).strict();
 export const resourceNames = ["customers", "drafts", "quotes", "proposals", "documents"] as const;
 export type ResourceName = typeof resourceNames[number];
