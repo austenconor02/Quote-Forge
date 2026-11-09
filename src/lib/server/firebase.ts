@@ -4,7 +4,7 @@ import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 
-export const EXPECTED_PROJECT_ID = "quote-forge-b153f";
+export const EXPECTED_PROJECT_ID = "quote-forge-54595";
 export function adminServices() {
   if (process.env.QUOTEFORGE_FIREBASE_ENABLED !== "true") throw new Error("Firebase is not configured.");
   const projectId = process.env.FIREBASE_PROJECT_ID;

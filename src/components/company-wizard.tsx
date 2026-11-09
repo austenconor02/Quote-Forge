@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, ChevronDown, ExternalLink, FileText, LoaderCircle, Monitor, Pipette, Save, Send, Smartphone } from "lucide-react";
-import { Company, defaultBranding, newId } from "@/lib/models";
+import { Company, defaultBranding, newId, companyProfile } from "@/lib/models";
 import { colorsFromLogo } from "@/lib/logo-palette";
 import { sampleQuote } from "@/lib/quote";
 import { useWorkspace } from "./workspace-provider";
@@ -140,7 +140,7 @@ export function CompanyWizard({ companyId, initialStep = 0 }: { companyId?: stri
     if (reassigning && !window.confirm("Revoke the existing company user's access and send an invitation to the new email? Existing quotes and customers will be kept.")) return;
     setBusy(true); setError("");
     try {
-      const response = await fetch("/api/invitations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ companyId: draft.id, company: profileWithLatestSettings(), email: normalizedEmail, action: reassigning ? "reassign" : "create", idempotencyKey: invitationOperation.current }) });
+      const response = await fetch("/api/invitations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ companyId: draft.id, company: companyProfile(profileWithLatestSettings()), email: normalizedEmail, action: reassigning ? "reassign" : "create", idempotencyKey: invitationOperation.current }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "The invitation service is unavailable. Save this company as an unassigned draft.");
       // Delivery and repository persistence must both be confirmed by the server.

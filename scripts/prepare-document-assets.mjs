@@ -17,4 +17,4 @@ await copyFile(join(ocr, "dist/worker.min.js.LICENSE.txt"), join(output, "tesser
 for (const name of await readdir(core)) if (/^tesseract-core.*\.(wasm|js)$/.test(name)) await copyFile(join(core, name), join(output, "tesseract/core", name));
 await copyFile(join(core, "LICENSE"), join(output, "tesseract/core/LICENSE"));
 try { await access(join(output, "tesseract/lang/eng.traineddata.gz")); console.log("Document worker, PDF resources, OCR core, and English language assets are ready."); }
-catch { console.warn("Document workers are ready. English OCR data is missing: public/document-assets/tesseract/lang/eng.traineddata.gz"); }
+catch { throw new Error("English OCR data is missing: public/document-assets/tesseract/lang/eng.traineddata.gz. Restore the committed model before building or deploying."); }

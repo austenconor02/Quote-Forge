@@ -15,6 +15,7 @@ export async function prepareOwnerSignIn(token: GoogleTokenClaims): Promise<{isO
   if (!isFreshVerifiedGoogleToken(token)) throw new AccessError(401, "Sign in again using your verified Google account.");
   const {auth, db} = adminServices();
   const pinned = process.env.QUOTEFORGE_OWNER_UID;
+  if (process.env.NODE_ENV === "production" && !pinned) throw new AccessError(503, "The owner Firebase UID must be initialized through administrator configuration before sign-in.");
   if (pinned && token.uid !== pinned) throw new AccessError(403, "This Google identity does not match the designated owner UID.");
   await db.runTransaction(async transaction => {
     const reference = db.doc("platform/config");

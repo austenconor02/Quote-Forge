@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useCallback, useEffect, useRef, useState, ReactNode } from "react";
-import { Activity, Company, Customer, Quote, Workspace, newId } from "@/lib/models";
+import { Activity, Company, Customer, Quote, Workspace, newId, companyProfile } from "@/lib/models";
 import { tenantWorkspaceSchema, workspaceSchema } from "@/lib/workspace-schema";
 import { createEmptyWorkspace, loadOwnerWorkspace, mergeTenantRecords, OWNER_STORAGE_KEY, TENANT_STORAGE_PREFIX } from "@/lib/workspace-storage";
 import { cloudRequest, loadCloudTenantWorkspace, saveCloudCustomer, saveCloudDraft } from "@/lib/cloud-repository";
@@ -93,7 +93,7 @@ export function WorkspaceProvider({ children, demo = true, cacheScope }: { child
       const existing = current.companies.find(record => record.id === company.id);
       const options = new URLSearchParams();
       if (existing && JSON.stringify(company.fields) !== JSON.stringify(existing.fields)) options.set("fields", "1");
-      const updated: Company = demo ? {...company, origin: "owner"} : (await cloudRequest("/api/companies" + (options.size ? "?" + options.toString() : ""), {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(company)})).company;
+      const updated: Company = demo ? {...company, origin: "owner"} : (await cloudRequest("/api/companies" + (options.size ? "?" + options.toString() : ""), {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(companyProfile(company))})).company;
       const next = {...current, selectedCompanyId: company.id, companies: current.companies.some(c => c.id === company.id) ? current.companies.map(c => c.id === company.id ? updated : c) : [...current.companies, updated]};
       if (demo) localSave(next); else {dataRef.current = next; setData(next);}
       return true;

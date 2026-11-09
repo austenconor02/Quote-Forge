@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { adminServices } from "./firebase";
 import { designatedOwnerUid } from "./owner-account";
 import { canAccessTenant, isOwner, localDemoAllowed, Identity } from "../access-policy";
+import { billingAccessAllowed } from "../billing-policy";
 
 export class AccessError extends Error { constructor(public status: number, message: string) { super(message); } }
 export async function isLocalDemo() {
@@ -29,12 +30,12 @@ export async function requireOwner() {
 export async function requireOwnerPage() {
   try { return await requireOwner(); } catch { redirect("/login"); }
 }
-export async function requireTenant(companyId: string) {
+export async function requireTenantMembership(companyId: string) {
   if (!/^[a-zA-Z0-9-]{1,100}$/.test(companyId)) throw new AccessError(400, "Invalid company identity.");
   if (await isLocalDemo()) return { demo: true, uid: "local-demo-owner" };
   const identity = await sessionIdentity();
   if (!identity) throw new AccessError(401, "Sign in is required.");
-  if (isOwner(identity, await designatedOwnerUid())) return { demo: false, uid: identity.uid };
+  if (isOwner(identity, await designatedOwnerUid())) return { demo: false, uid: identity.uid, owner: true };
   const {db} = adminServices();
   const [company, member, assignment] = await Promise.all([
     db.doc("companies/" + companyId).get(), db.doc("companies/" + companyId + "/users/" + identity.uid).get(), db.doc("userAccess/" + identity.uid).get()
@@ -42,6 +43,14 @@ export async function requireTenant(companyId: string) {
   if (assignment.data()?.companyId !== companyId || assignment.data()?.enabled !== true ||
     !canAccessTenant(identity, undefined, company.data()?.status, member.exists ? { uid: member.id, enabled: member.data()?.enabled === true } : undefined)) throw new AccessError(403, "Company access is unavailable.");
   return { demo: false, uid: identity.uid };
+}
+export async function requireTenant(companyId: string) {
+  const session = await requireTenantMembership(companyId);
+  if (!session.demo && !("owner" in session && session.owner)) {
+    const billing = (await adminServices().db.doc(`companyBilling/${companyId}`).get()).data();
+    if (!billingAccessAllowed(billing)) throw new AccessError(402, "This company requires a confirmed subscription. Contact the company owner for its payment setup link.");
+  }
+  return session;
 }
 export function apiError(error: unknown) {
   const status = error instanceof AccessError ? error.status : 503;

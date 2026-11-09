@@ -1,7 +1,7 @@
 import { after, before, test } from "node:test";
 import { readFileSync } from "node:fs";
 import { initializeTestEnvironment, assertFails, assertSucceeds, RulesTestEnvironment } from "@firebase/rules-unit-testing";
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, Timestamp } from "firebase/firestore";
 import { ref, uploadBytes, getBytes } from "firebase/storage";
 let env: RulesTestEnvironment;
 let previousPlatformConfig: Record<string, unknown> | null = null;
@@ -98,4 +98,23 @@ test("storage denies every direct client access; private files require backend a
   await assertFails(uploadBytes(ref(alice, "companies/a/documents/new.pdf"), new Uint8Array([1, 2, 3]), {contentType: "application/pdf"}));
   const owner = env.authenticatedContext("sole-owner", {...verifiedGoogle, platformOwner: true}).storage();
   await assertFails(uploadBytes(ref(owner, "companies/a/branding/logo.png"), new Uint8Array([1, 2, 3]), {contentType: "image/png"}));
+});
+
+test("billing gates tenant reads and clients cannot forge payment or disable billing", async () => {
+  const alice = member("alice").firestore();
+  const owner = env.authenticatedContext("sole-owner", {...verifiedGoogle, platformOwner: true}).firestore();
+  const writeBilling = (data: Record<string, unknown>) => env.withSecurityRulesDisabled(context => setDoc(doc(context.firestore(), "companyBilling/a"), data));
+  try {
+    await writeBilling({enabled: true, status: "Payment Required", entitled: false});
+    await assertFails(getDoc(doc(alice, "companies/a/customers/customer")));
+    await assertSucceeds(getDoc(doc(owner, "companies/a/customers/customer")));
+    await assertFails(setDoc(doc(alice, "companyBilling/a"), {enabled: false}));
+    await assertFails(getDoc(doc(owner, "companyBilling/a")));
+    await writeBilling({enabled: true, status: "Active", entitled: true, accessUntilTimestamp: Timestamp.fromMillis(Date.now() + 60000)});
+    await assertSucceeds(getDoc(doc(alice, "companies/a/customers/customer")));
+    await writeBilling({enabled: true, status: "Active", entitled: true, accessUntilTimestamp: Timestamp.fromMillis(Date.now() - 1000)});
+    await assertFails(getDoc(doc(alice, "companies/a/customers/customer")));
+    await writeBilling({enabled: false, status: "Free", entitled: false});
+    await assertSucceeds(getDoc(doc(alice, "companies/a/customers/customer")));
+  } finally {await env.withSecurityRulesDisabled(context => deleteDoc(doc(context.firestore(), "companyBilling/a")));}
 });

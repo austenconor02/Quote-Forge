@@ -10,6 +10,9 @@ for (const [path, method, data] of [["/api/companies", "POST"], ["/api/workspace
   assert.equal(response.status, 401, path); passed++;
 }
 for (const path of ["/login", "/invite", "/proposal"]) {const response = await fetch(base + path); assert.equal(response.status, 200); assert.equal(response.headers.get("x-content-type-options"), "nosniff"); passed++;}
+assert.equal((await fetch(base + "/api/companies/test-company/billing", {method: "POST", headers: {origin: base, "content-type": "application/json"}, body: JSON.stringify({action: "enable", paid: true})})).status, 401); passed++;
+assert.equal((await fetch(base + "/api/stripe/webhook", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({type: "invoice.paid"})})).status, 503); passed++;
+assert.equal((await fetch(base + "/billing/return?paid=true")).status, 200); passed++;
 assert.equal((await fetch(base + "/api/companies", {method: "POST", headers: {origin: "https://untrusted.example", "content-type": "application/json"}, body: "{}"})).status, 403); passed++;
 assert.equal((await fetch(base + "/api/proposals/download", {method: "POST", headers: {origin: base, "content-type": "application/json"}, body: JSON.stringify({token: "invalid"})})).status, 404); passed++;
 console.log(`${passed} production access checks passed. Local demo is unavailable in the production build.`);

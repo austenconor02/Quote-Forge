@@ -1,4 +1,4 @@
-# Prepared for Firebase App Hosting. No backend or deployment is created by this file.
+# Firebase App Hosting: confirmed QuoteForge project and backend.
 # Configure the web-app values and server secrets in Firebase before enabling services.
 runConfig:
   minInstances: 0
@@ -11,17 +11,40 @@ env:
     value: "false"
     availability: [RUNTIME]
   - variable: QUOTEFORGE_FIREBASE_ENABLED
-    value: "false"
+    value: "true"
     availability: [RUNTIME]
   - variable: QUOTEFORGE_USE_EMULATORS
     value: "false"
     availability: [RUNTIME]
   - variable: FIREBASE_PROJECT_ID
-    value: "quote-forge-b153f"
+    value: "quote-forge-54595"
     availability: [RUNTIME]
   - variable: FIREBASE_STORAGE_BUCKET
-    value: "quote-forge-b153f.firebasestorage.app"
+    value: "quote-forge-54595.firebasestorage.app"
     availability: [RUNTIME]
   - variable: EMAIL_DELIVERY_ENABLED
     value: "false"
+    availability: [RUNTIME]
+
+  - variable: QUOTEFORGE_OWNER_EMAIL
+    value: "austenconor02@gmail.com"
+    availability: [RUNTIME]
+  - variable: QUOTEFORGE_OWNER_BOOTSTRAP_ENABLED
+    value: "false"
+    availability: [RUNTIME]
+  - variable: STRIPE_ENABLED
+    value: "false"
+    availability: [RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_ENABLED
+    value: "true"
+    availability: [BUILD, RUNTIME]
+  - variable: NEXT_PUBLIC_USE_EMULATORS
+    value: "false"
+    availability: [BUILD, RUNTIME]
+  - variable: APP_ORIGIN
+    value: "https://quoteforge--quote-forge-54595.us-central1.hosted.app"
+    availability: [RUNTIME]
+  - variable: QUOTEFORGE_OWNER_UID
+    value: "EqMe59PieKTkAL2ZVlFvDYUvDp13"
     availability: [RUNTIME]

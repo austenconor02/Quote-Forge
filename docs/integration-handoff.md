@@ -2,13 +2,13 @@
 
 ## Live project status
 
-The configured target is **`quote-forge-b153f`**, with owner **`austenconor02@gmail.com`** and intended repository `austenconor02/Quote-Forge`. Configuration files are prepared, but no Firebase resources, rules, hosting backend, billing setting, or production release have been deployed.
+The confirmed target is **`quote-forge-54595`**, selected explicitly by the owner after the refreshed account listed that project. The original saved project ID caused the earlier CLI permission errors. The owner reauthenticated, enabled Google Authentication, and completed a first Google sign-in. Its verified UID is now anchored and given the owner claim.
 
-The Firebase CLI was retried with the exact supplied project and account. Its project/app API returned **403 PERMISSION_DENIED**. This is an authorization blocker in the current CLI session; it does not contradict the supplied console screenshot. Refresh project authorization before attempting live setup. During inspection, the CLI account-list JSON command unexpectedly emitted credential data; revoke that existing CLI authorization and sign in again. Logs, credentials, private environment files, downloaded tools, and original reference archives are excluded from Git. Do not run or publish the account-list JSON output.
+The Web app, protected Firestore database, private default Storage bucket, and App Hosting backend are deployed in the confirmed project at https://quoteforge--quote-forge-54595.us-central1.hosted.app. See [Phase 4 deployment and billing](phase4-security-billing.md) for current provisioning and rollout status. No original roofing-project resources were changed. Stripe/email remain disabled pending configuration. Credentials, environment files, references, local tooling, and test artifacts are excluded from source deployment.
 
-## Firebase setup required before a later release
+## Firebase setup and recovery checklist
 
-1. Restore CLI/project access under the intended Google account. Confirm `firebase projects:list` and `firebase apps:list --project quote-forge-b153f` succeed. Avoid commands that print credentials.
+1. Restore CLI/project access under the intended Google account. Confirm `firebase projects:list` and `firebase apps:list --project quote-forge-54595` succeed. Avoid commands that print credentials.
 2. Register a Firebase Web app in this project and provide its public SDK configuration in the `NEXT_PUBLIC_FIREBASE_*` settings. The server and browser reject unexpected project IDs.
 3. Enable Google sign-in in Authentication; configure the support email and authorized application domains. Other sign-in providers do not grant application sessions.
 4. Create the Firestore database and private Storage bucket in the intended region. Cloud Storage requires the Blaze plan under the [current Firebase requirements](https://firebase.google.com/docs/storage/faqs-storage-changes-announced-sept-2024). Billing changes require a separate user decision.

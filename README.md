@@ -1,5 +1,7 @@
 # QuoteForge
 
+Live: **https://quoteforge--quote-forge-54595.us-central1.hosted.app** ? Google owner sign-in required.
+
 Company-specific quoting workspaces built with Next.js, Firebase Auth, Firestore, private Cloud Storage, and EmailJS. The owner creates companies and branding; invited Google accounts can access only their assigned active company.
 
 ## Current implementation
@@ -12,18 +14,18 @@ Company-specific quoting workspaces built with Next.js, Firebase Auth, Firestore
 - Expiring, single-use invitation links and server-side EmailJS delivery. Email delivery remains disabled until templates and keys are configured.
 - Reviewed proposals can be sent through the same held delivery service as private, expiring PDF links. See [proposal delivery setup](docs/proposal-delivery.md).
 
-**No deployment has been performed.** The target project is `quote-forge-b153f`. Local development works independently; live services fail closed until configured. The original AI generation engine (`functions/index.js`) was absent from the supplied references, so automatic generation remains disabled. OCR does not generate prices or scope.
+The confirmed Firebase project is `quote-forge-54595`; owner Google UID setup and the App Hosting deployment are complete. Deployment/security and Stripe setup are documented in [docs/phase4-security-billing.md](docs/phase4-security-billing.md). Stripe and email delivery stay disabled until configured. The original AI generation engine (`functions/index.js`) was absent from the supplied references, so automatic generation remains disabled. OCR does not generate prices or scope.
 
 ## Local preview
 
-Use Node 22.13.1 or newer. Copy `.env.example` to `.env.local`, leaving Firebase and email flags disabled.
+Use Node 22.13.1 or newer. Copy `.env.example` to `.env.local`, leaving Stripe and email flags disabled. Google login is required by default; configure the Firebase Web app and administrator credentials for local cloud access. The optional development-only bypass must be explicitly enabled on loopback.
 
 ```powershell
 npm.cmd ci
 npm.cmd run dev
 ```
 
-Open `http://127.0.0.1:3000`. The local owner bypass works only in development on loopback. Production always requires authentication. Local browser data is kept separate from cloud records and is never automatically uploaded.
+Open `http://127.0.0.1:3000`. If explicitly enabled, the local owner bypass works only in development on loopback. Production always requires authentication. Local browser data is kept separate from cloud records and is never automatically uploaded.
 
 `npm ci` prepares the pinned PDF/OCR worker assets. The committed English OCR model includes its license and provenance under `public/document-assets/tesseract/lang/`.
 

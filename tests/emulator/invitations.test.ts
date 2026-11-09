@@ -115,6 +115,13 @@ test("unauthorized issuance never writes a company or prepares a public logo", a
   assert.equal(writes, 0); assert.equal(assets, 0);
 });
 
+test("unpaid companies cannot send an activation invitation before confirmed payment", async () => {
+  const company = await seed(), messages: InvitationEmail[] = [], backend = service(messages);
+  const billing = db.doc(`companyBilling/${company.id}`);
+  try {await billing.set({enabled: true, status: "Payment Required", entitled: false}); await assert.rejects(issue(backend, company, "unpaid@example.com"), /billing setup link first/); assert.equal(messages.length, 0);}
+  finally {await billing.delete();}
+});
+
 test("acceptance requires the invited verified Google email and consumes the token once", async () => {
   const company = await seed(), messages: InvitationEmail[] = [];
   const backend = service(messages); await issue(backend, company, "accept@example.com");

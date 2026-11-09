@@ -11,7 +11,7 @@ export function Login({invitationToken}: {invitationToken?: string}) {
       if (process.env.NEXT_PUBLIC_FIREBASE_ENABLED !== "true") throw new Error("Google sign-in needs the QuoteForge Firebase web app configuration.");
       const [{initializeApp, getApps}, {getAuth, GoogleAuthProvider, signInWithPopup, signOut, setPersistence, inMemoryPersistence, connectAuthEmulator}] = await Promise.all([import("firebase/app"), import("firebase/auth")]);
       const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-      if (projectId !== "quote-forge-b153f" && !(process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_USE_EMULATORS === "true" && projectId === "demo-quoteforge")) throw new Error("The Firebase web app must belong to QuoteForge.");
+      if (projectId !== "quote-forge-54595" && !(process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_USE_EMULATORS === "true" && projectId === "demo-quoteforge")) throw new Error("The Firebase web app must belong to QuoteForge.");
       const app = getApps().find(app => app.name === "quoteforge-browser") || initializeApp({apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY, authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN, projectId, appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID}, "quoteforge-browser");
       const auth = getAuth(app);
       if (process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_USE_EMULATORS === "true" && !auth.emulatorConfig) connectAuthEmulator(auth, "http://127.0.0.1:9099", {disableWarnings: true});

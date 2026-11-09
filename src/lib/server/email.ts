@@ -4,6 +4,7 @@ import { accessibleEmailTextColor, type InvitationEmailBranding } from "../invit
 
 export type InvitationEmail = InvitationEmailBranding & {toEmail: string; companyName: string; invitationUrl: string; expiresAt: string};
 export type ProposalEmail = {toEmail: string; companyName: string; customerName: string; proposalUrl: string; proposalTotal: string; proposalTitle: string; expiresAt: string};
+export type BillingEmail = InvitationEmailBranding & {toEmail: string; companyName: string; billingUrl: string};
 export class EmailDeliveryError extends Error {
   constructor(public kind: "rejected" | "unknown") {super(kind === "rejected" ? "The email provider rejected the email. Nothing was confirmed as sent." : "Email delivery could not be confirmed. The request will not be automatically resent.");}
 }
@@ -12,6 +13,7 @@ export function invitationEmailConfigured() {
   return configured(process.env.EMAILJS_INVITATION_TEMPLATE_ID);
 }
 export function proposalEmailConfigured() {return configured(process.env.EMAILJS_PROPOSAL_TEMPLATE_ID);}
+export function billingEmailConfigured() {return configured(process.env.EMAILJS_BILLING_TEMPLATE_ID);}
 function validLink(email: string, link: string, path: string) {
   const origin = invitationOrigin(process.env.APP_ORIGIN, process.env.NODE_ENV !== "production")!;
   const url = new URL(link);
@@ -40,4 +42,10 @@ export async function sendProposalEmail(message: ProposalEmail): Promise<void> {
   if (!proposalEmailConfigured()) throw new Error("Proposal email delivery is not configured.");
   if (!validLink(message.toEmail, message.proposalUrl, "/proposal")) throw new Error("The proposal email contains invalid information.");
   return send(process.env.EMAILJS_PROPOSAL_TEMPLATE_ID!, {to_email: message.toEmail, company_name: message.companyName, customer_name: message.customerName, proposal_url: message.proposalUrl, proposal_total: message.proposalTotal, proposal_title: message.proposalTitle, expires_at: message.expiresAt});
+}
+export async function sendBillingEmail(message: BillingEmail): Promise<void> {
+  if (!billingEmailConfigured()) throw new EmailDeliveryError("rejected");
+  const link = new URL(message.billingUrl);
+  if (!normalizeInvitationEmail(message.toEmail) || link.protocol !== "https:" || link.hostname !== "checkout.stripe.com" || link.username || link.password) throw new EmailDeliveryError("rejected");
+  return send(process.env.EMAILJS_BILLING_TEMPLATE_ID!, {to_email: message.toEmail, company_name: message.companyName, company_logo_url: message.companyLogoUrl, primary_color: message.primaryColor, header_text_color: message.headerTextColor, button_text_color: message.buttonTextColor, billing_url: message.billingUrl, monthly_price: "$99.00 USD / month"});
 }

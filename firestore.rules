@@ -15,7 +15,16 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/userAccess/$(request.auth.uid)).data.enabled == true
         && get(/databases/$(database)/documents/userAccess/$(request.auth.uid)).data.companyId == companyId
         && get(/databases/$(database)/documents/companies/$(companyId)).data.status == 'Active'
-        && get(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid)).data.enabled == true;
+        && get(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid)).data.enabled == true
+        && paidAccess(companyId);
+    }
+    function paidAccess(companyId) {
+      return !exists(/databases/$(database)/documents/companyBilling/$(companyId))
+        || get(/databases/$(database)/documents/companyBilling/$(companyId)).data.enabled == false
+        || (get(/databases/$(database)/documents/companyBilling/$(companyId)).data.enabled == true
+          && get(/databases/$(database)/documents/companyBilling/$(companyId)).data.status == 'Active'
+          && get(/databases/$(database)/documents/companyBilling/$(companyId)).data.entitled == true
+          && get(/databases/$(database)/documents/companyBilling/$(companyId)).data.accessUntilTimestamp > request.time);
     }
     function access(companyId) { return owner() || tenantUser(companyId); }
     match /platform/config { allow get: if owner(); allow list, write: if false; }
@@ -27,6 +36,10 @@ service cloud.firestore {
     match /proposalShares/{id} { allow read, write: if false; }
     // Logo-only email snapshots are served as PNG bytes by the public image endpoint.
     match /invitationEmailAssets/{id} { allow read, write: if false; }
+    match /companyBilling/{id} { allow read, write: if false; }
+    match /stripeCustomers/{id} { allow read, write: if false; }
+    match /stripeSubscriptions/{id} { allow read, write: if false; }
+    match /stripeEvents/{id} { allow read, write: if false; }
     match /companies/{companyId} {
       allow get: if access(companyId);
       allow list: if owner();

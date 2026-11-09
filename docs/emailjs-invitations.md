@@ -21,7 +21,7 @@ Get the public key from EmailJS **Account** and the private key from **Account â
 
 Keep `EMAIL_DELIVERY_ENABLED=false` until a test delivery has been approved. Do not use the fake test credentials from the emulator instructions with real EmailJS.
 
-Live Firebase configuration is also missing locally: registered Web app SDK values, Google Authentication setup, Firestore/Storage provisioning, and server Admin SDK credentials or application default credentials. Follow [the Firebase handoff](integration-handoff.md). Do not turn on the local development bypass for a hosted application. Invitations require the verified, designated Google owner; local demo mode cannot send them.
+For local server access or a fresh environment, Firebase requires: registered Web app SDK values, Google Authentication setup, Firestore/Storage provisioning, and server Admin SDK credentials or application default credentials. Follow [the Firebase handoff](integration-handoff.md). Do not turn on the local development bypass for a hosted application. Invitations require the verified, designated Google owner; local demo mode cannot send them.
 
 ## Existing template
 

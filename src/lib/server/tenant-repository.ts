@@ -8,6 +8,7 @@ import type { Company, Customer, Quote, Workspace } from "../models";
 import { createEmptyWorkspace } from "../workspace-storage";
 import { companyInputSchema, customerInputSchema, identifierSchema, quoteInputSchema, type ResourceName, validTenantRecord } from "../server-input";
 import { enforceRateLimit } from "./rate-limit";
+import { billingAccessAllowed, billingSummary } from "../billing-policy";
 
 const digest = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
 const jsonSize = (input: unknown) => Buffer.byteLength(JSON.stringify(input), "utf8");
@@ -21,12 +22,13 @@ export async function assertTenantTransaction(transaction: FirebaseFirestore.Tra
   const {db} = adminServices();
   const owner = await transaction.get(db.doc("platform/config"));
   if (owner.data()?.ownerUid === uid) return;
-  const [company, assignment, membership] = await Promise.all([
+  const [company, assignment, membership, billing] = await Promise.all([
     transaction.get(db.doc(`companies/${companyId}`)),
     transaction.get(db.doc(`userAccess/${uid}`)),
-    transaction.get(db.doc(`companies/${companyId}/users/${uid}`))
+    transaction.get(db.doc(`companies/${companyId}/users/${uid}`)), transaction.get(db.doc(`companyBilling/${companyId}`))
   ]);
   if (company.data()?.status !== "Active" || assignment.data()?.companyId !== companyId || assignment.data()?.enabled !== true || membership.data()?.enabled !== true) throw new AccessError(403, "Company access changed before this operation could finish.");
+  if (!billingAccessAllowed(billing.data())) throw new AccessError(402, "Company billing changed before this operation could finish.");
 }
 
 export async function tenantCollection(companyId: string, resource: ResourceName) {
@@ -36,7 +38,7 @@ export async function tenantCollection(companyId: string, resource: ResourceName
   return adminServices().db.collection("companies").doc(companyId).collection(resource);
 }
 
-async function companyForUi(id: string, data: FirebaseFirestore.DocumentData): Promise<Company & {updatedAt?: string}> {
+async function companyForUi(id: string, data: FirebaseFirestore.DocumentData, ownerBilling = false): Promise<Company & {updatedAt?: string}> {
   let logo = "";
   const path = data.branding?.logoStoragePath;
   if (typeof path === "string" && path.startsWith(`companies/${id}/branding/`)) {
@@ -52,7 +54,8 @@ async function companyForUi(id: string, data: FirebaseFirestore.DocumentData): P
     const preview = await sharp(bytes, {limitInputPixels: 16000000}).resize({width: 256, height: 256, fit: "inside", withoutEnlargement: true}).png().toBuffer();
     logo = `data:image/png;base64,${preview.toString("base64")}`;
   }
-  return { id, name: data.name, industry: data.industry || "", email: data.email || "", phone: data.phone || "", address: data.address || "", website: data.website || "", status: data.status, branding: {primary: data.branding.primary, secondary: data.branding.secondary, accent: data.branding.accent, font: data.branding.font, logo, ...(path ? {logoStoragePath: path} : {})}, fields: Array.isArray(data.fields) ? data.fields : [], createdAt: timestampString(data.createdAt) || "", updatedAt: timestampString(data.updatedAt), origin: "owner", ...(data.assignedEmail ? {assignedEmail: data.assignedEmail} : {}) };
+  const billing = (await adminServices().db.doc(`companyBilling/${id}`).get()).data();
+  return { billing: billingSummary({...billing, ...(!ownerBilling ? {billingEmail: undefined} : {})}), id, name: data.name, industry: data.industry || "", email: data.email || "", phone: data.phone || "", address: data.address || "", website: data.website || "", status: data.status, branding: {primary: data.branding.primary, secondary: data.branding.secondary, accent: data.branding.accent, font: data.branding.font, logo, ...(path ? {logoStoragePath: path} : {})}, fields: Array.isArray(data.fields) ? data.fields : [], createdAt: timestampString(data.createdAt) || "", updatedAt: timestampString(data.updatedAt), origin: "owner", ...(data.assignedEmail ? {assignedEmail: data.assignedEmail} : {}) };
 }
 
 export async function saveCompanyRecord(input: unknown, options: {updateFields?: boolean} = {}): Promise<Company> {
@@ -95,7 +98,7 @@ export async function saveCompanyRecord(input: unknown, options: {updateFields?:
     transaction.set(reference, {id: company.id, name: company.name, industry: company.industry, email: company.email, phone: company.phone, address: company.address, website: company.website, branding,
       fields: original && !options.updateFields ? original.fields || [] : company.fields, status: original?.status || "Draft", origin: "owner", createdBy: original?.createdBy || session.uid, createdAt: original?.createdAt || now, updatedAt: now}, {merge: true});
   });
-  return companyForUi(company.id, (await reference.get()).data()!);
+  return companyForUi(company.id, (await reference.get()).data()!, true);
 }
 
 export async function readOwnerWorkspace(cursor?: string): Promise<Workspace & {nextCursor: string | null}> {
@@ -106,7 +109,7 @@ export async function readOwnerWorkspace(cursor?: string): Promise<Workspace & {
   if (cursor) query = query.startAfter(recordId(cursor));
   const result = await query.get();
   const page = result.docs.slice(0, 25);
-  const companies = await Promise.all(page.map(document => companyForUi(document.id, document.data())));
+  const companies = await Promise.all(page.map(document => companyForUi(document.id, document.data(), true)));
   const invitations = (await Promise.all(page.map(async company => {
     const rows = await db.collection("companies").doc(company.id).collection("invitations").orderBy("createdAt", "desc").limit(100).get();
     return rows.docs.map(document => {const data = document.data(); return {id: document.id, companyId: company.id, email: String(data.email), status: data.status, createdAt: String(data.createdAt)};});

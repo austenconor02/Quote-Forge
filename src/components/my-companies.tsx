@@ -5,10 +5,13 @@ import { useState } from "react";
 import { Plus, Search, ArrowUpRight, Pencil, Mail, Power, Building2, X } from "lucide-react";
 import { newId, type Company } from "@/lib/models";
 import { useWorkspace } from "./workspace-provider";
+import { CompanyBillingControl } from "./company-billing-control";
+import { useIntegrationStatus } from "./use-integration-status";
 import { CompanyLogo, Modal } from "./ui";
 
 export function MyCompanies() {
   const router = useRouter();
+  const integrations = useIntegrationStatus();
   const { data, ready, saveCompany, toast, demo, refreshWorkspace, loadError } = useWorkspace();
   const [search, setSearch] = useState("");
   const [accessChange, setAccessChange] = useState<Company | null>(null);
@@ -58,11 +61,12 @@ export function MyCompanies() {
         return <article className="owner-company-card" key={company.id} onClick={event => { if (!(event.target as HTMLElement).closest("a,button,summary,details")) router.push(`/companies/${company.id}/edit`); }}>
           <Link className="owner-company-identity" href={`/companies/${company.id}/edit`} aria-label={`Edit ${company.name}`}><CompanyLogo company={company} size="large"/><h2>{company.name}</h2></Link>
           <dl className="owner-company-details"><div><dt>Assigned email</dt><dd>{assignedEmail || "Not assigned"}</dd></div><div><dt>Access</dt><dd><span className={`owner-access-status ${company.status === "Suspended" ? "inactive" : invitation?.status === "Active" ? "active" : "draft"}`}><span/>{access}</span></dd></div><div><dt>Created</dt><dd><time dateTime={company.createdAt}>{new Date(company.createdAt).toLocaleDateString("en-US", {month: "short", day: "numeric", year: "numeric", timeZone: "America/Chicago"})}</time></dd></div></dl>
+          <CompanyBillingControl company={company} stripeReady={integrations.stripeConfigured} deliveryReady={integrations.billingReady}/>
           <div className="owner-company-buttons"><Link className="button secondary" href={`/companies/${company.id}/edit`}><Pencil size={14}/>Edit</Link><Link className="button owner-open-button" href={`/companies/${company.id}/open`}>Open Company<ArrowUpRight size={14}/></Link></div>
           <div className="owner-company-more"><button type="button" disabled={sending === company.id} onClick={() => void resend(company)}><Mail size={13}/>{sending === company.id ? "Checking delivery…" : "Resend Invitation"}</button><button type="button" onClick={() => setAccessChange(company)}><Power size={13}/>{company.status === "Suspended" ? "Reactivate" : "Deactivate"}</button></div>
         </article>;
       })}</div>}
     </>}
-    {accessChange && <Modal title={accessChange.status === "Suspended" ? "Reactivate company?" : "Deactivate company?"} onClose={() => setAccessChange(null)}><p>{accessChange.status === "Suspended" ? `Restore company access for ${accessChange.name}. Unassigned companies remain drafts until an invitation is successfully sent.` : `Suspend access for ${accessChange.name}. Existing customers, quotes, and drafts will be kept.`}</p><p className="owner-local-note">{demo ? "This updates local workspace access. Live Firebase account changes require the independent integration." : "This changes server-enforced access. Deactivation immediately blocks company requests and revokes existing user sessions."}</p><div className="form-actions"><button className="button secondary" disabled={changingAccess} onClick={() => setAccessChange(null)}>Cancel</button><button className="button primary" disabled={changingAccess} onClick={() => void applyAccessChange()}>{changingAccess ? "Updating…" : accessChange.status === "Suspended" ? "Reactivate" : "Deactivate"}</button></div></Modal>}
+    {accessChange && <Modal title={accessChange.status === "Suspended" ? "Reactivate company?" : "Deactivate company?"} onClose={() => setAccessChange(null)}><p>{accessChange.status === "Suspended" ? `Restore company access for ${accessChange.name}. Unassigned companies remain drafts until an invitation is successfully sent.` : `Suspend access for ${accessChange.name}. Existing customers, quotes, and drafts will be kept.`}</p>{accessChange.billing?.enabled && accessChange.status !== "Suspended" && <p className="owner-local-note">Use Disable Billing separately to cancel this company?s recurring charges.</p>}<p className="owner-local-note">{demo ? "This updates local workspace access. Live Firebase account changes require the independent integration." : "This changes server-enforced access. Deactivation immediately blocks company requests and revokes existing user sessions."}</p><div className="form-actions"><button className="button secondary" disabled={changingAccess} onClick={() => setAccessChange(null)}>Cancel</button><button className="button primary" disabled={changingAccess} onClick={() => void applyAccessChange()}>{changingAccess ? "Updating…" : accessChange.status === "Suspended" ? "Reactivate" : "Deactivate"}</button></div></Modal>}
   </div>;
 }

@@ -1,3 +1,4 @@
+import type { BillingSummary } from "./billing-policy";
 export type CompanyStatus = "Active" | "Draft" | "Suspended";
 export type FieldType = "Text" | "Number" | "Currency" | "Date" | "Dropdown" | "Checkbox" | "Multiline text";
 export type Branding = { primary: string; secondary: string; accent: string; font: string; logo: string };
@@ -6,7 +7,9 @@ export type Company = {
   id: string; name: string; industry: string; email: string; phone: string; address: string; website: string;
   status: CompanyStatus; branding: Branding; fields: CustomField[]; createdAt: string;
   origin?: "owner" | "demo"; assignedEmail?: string;
+  billing?: BillingSummary;
 };
+export function companyProfile(company: Company) {const {billing: _billing, ...profile} = company; return profile;}
 export type Customer = { id: string; companyId: string; name: string; email: string; phone: string; address: string };
 export type LineItem = { id: string; description: string; section: string; quantity: number; unit: string; unitPrice: number; hiddenFromProposal: boolean; needsReview: boolean; sourceType?: string; confidence?: string };
 export type QuoteSourceDocument = {

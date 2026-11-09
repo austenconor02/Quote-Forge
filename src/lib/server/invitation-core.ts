@@ -6,6 +6,7 @@ import type { Company } from "../models";
 import { canAcceptInvitation, invitationOrigin, INVITATION_LIFETIME_MS, normalizeInvitationEmail, validInvitationToken, verifiedGoogleIdentity, type InvitationIdentity } from "../invitation-policy";
 import { EmailDeliveryError, type InvitationEmail } from "./email";
 import type { InvitationEmailBranding, StoredInvitationCompany } from "../invitation-email-branding";
+import { billingAccessAllowed } from "../billing-policy";
 
 export type IssueInput = {companyId: string; company?: Company; email: string; action: "create" | "resend" | "reassign"; idempotencyKey?: string};
 export type IssueResult = {companySaved: true; delivered: true; invitationId: string};
@@ -61,9 +62,10 @@ export function createInvitationService(deps: InvitationDependencies) {
     const throttleRef = deps.db.collection("mailOperations").doc("emailjs-global-throttle");
     const expiresAt = Timestamp.fromMillis(time + INVITATION_LIFETIME_MS);
     const prepared = await deps.db.runTransaction(async transaction => {
-      const [opSnapshot, companySnapshot, assignmentSnapshot, throttle] = await Promise.all([transaction.get(operation), transaction.get(companyRef), transaction.get(assignmentRef), transaction.get(throttleRef)]);
+      const [opSnapshot, companySnapshot, assignmentSnapshot, throttle, billing] = await Promise.all([transaction.get(operation), transaction.get(companyRef), transaction.get(assignmentRef), transaction.get(throttleRef), transaction.get(deps.db.doc(`companyBilling/${input.companyId}`))]);
       if (opSnapshot.exists) {const result = existingOperation(opSnapshot.data()!); if (result) return {result, revoke: [] as string[], company: null};}
       if (!companySnapshot.exists) throw new AccessError(404, "Company not found.");
+      if (!billingAccessAllowed(billing.data())) throw new AccessError(402, "Send the billing setup link first. The activation invitation becomes available after Stripe confirms payment.");
       const company = companySnapshot.data()!;
       const assignment = assignmentSnapshot.data();
       if (company.status === "Suspended" && input.action !== "reassign") throw new AccessError(409, "Reactivate this company before sending an invitation.");

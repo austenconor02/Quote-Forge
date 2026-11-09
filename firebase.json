@@ -1,5 +1,60 @@
 {
-  "firestore": { "rules": "firestore.rules", "indexes": "firestore.indexes.json" },
-  "storage": { "rules": "storage.rules" },
-  "emulators": { "auth": { "host": "127.0.0.1", "port": 9099 }, "firestore": { "host": "127.0.0.1", "port": 8080 }, "storage": { "host": "127.0.0.1", "port": 9199 }, "ui": { "enabled": false }, "singleProjectMode": true }
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "emulators": {
+    "auth": {
+      "host": "127.0.0.1",
+      "port": 9099
+    },
+    "firestore": {
+      "host": "127.0.0.1",
+      "port": 8080
+    },
+    "storage": {
+      "host": "127.0.0.1",
+      "port": 9199
+    },
+    "ui": {
+      "enabled": false
+    },
+    "singleProjectMode": true
+  },
+  "apphosting": {
+    "backendId": "quoteforge",
+    "rootDir": ".",
+    "ignore": [
+      "node_modules",
+      ".git",
+      ".github",
+      ".agents",
+      ".codex",
+      ".aws",
+      ".env*",
+      ".next*",
+      ".tools",
+      ".runtime",
+      ".local-firebase-config",
+      ".firebase",
+      "reference-source",
+      "artifacts",
+      "test-results",
+      "playwright-report",
+      "tests",
+      "docs",
+      "*.log",
+      "**/*.pem",
+      "**/*.p12",
+      "**/*service-account*.json",
+      "**/*serviceAccount*.json",
+      "credentials*.json",
+      "AGENTS.md",
+      "playwright.config.ts",
+      "scripts/bootstrap-owner.mjs"
+    ]
+  }
 }

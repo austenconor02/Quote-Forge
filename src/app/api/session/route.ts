@@ -18,6 +18,7 @@ export async function POST(request: Request) {
     await assertSameOrigin(request);
     const body = await readJson(request);
     await verifyCsrf(body);
+    if (process.env.QUOTEFORGE_FIREBASE_ENABLED !== "true") throw new AccessError(503, "Server authentication setup is not complete yet. Your Google account has not been granted dashboard access.");
     if (typeof body.idToken !== "string" || body.idToken.length > 10000) throw new AccessError(400, "A valid Google identity token is required.");
     const {auth, db} = adminServices();
     let token;
