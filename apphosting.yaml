@@ -35,6 +35,10 @@ env:
   - variable: STRIPE_ENABLED
     value: "false"
     availability: [RUNTIME]
+  # Sandbox price only. Checkout remains disabled until server credentials and webhooks are configured.
+  - variable: STRIPE_PRICE_ID
+    value: "price_1UZzgz2cpYmPAH1oPaO3jFk8"
+    availability: [RUNTIME]
 
   - variable: NEXT_PUBLIC_FIREBASE_ENABLED
     value: "true"

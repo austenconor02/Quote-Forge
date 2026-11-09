@@ -64,14 +64,14 @@ Keep these flags **false** while credentials/templates are missing:
 STRIPE_ENABLED=false
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
-STRIPE_PRICE_ID=
+STRIPE_PRICE_ID=price_1UZzgz2cpYmPAH1oPaO3jFk8
 EMAIL_DELIVERY_ENABLED=false
 EMAILJS_PUBLIC_KEY=
 EMAILJS_PRIVATE_KEY=
 EMAILJS_BILLING_TEMPLATE_ID=
 ```
 
-Create one active Stripe price for USD 99.00, recurring every month. Put its `price_...` ID in `STRIPE_PRICE_ID`; set the appropriate secret and webhook signing secret in server-only App Hosting secrets. Configure Customer Portal in Stripe. The checkout return URL is `/billing/return` and grants no access.
+The owner supplied sandbox Price ID `price_1UZzgz2cpYmPAH1oPaO3jFk8` for USD 99.00 recurring every month. It is set in `.env.local`, the example environment, and runtime-only App Hosting configuration. Keep `STRIPE_ENABLED=false` until the matching sandbox server key, webhook signing secret, and billing email configuration are supplied and sandbox verification is complete. The gateway validates the actual price's amount, currency, monthly interval, and billing model before creating checkout; the price has not yet been retrieved from Stripe. Configure Customer Portal in Stripe. The checkout return URL is `/billing/return` and grants no access. Live billing requires a separately configured live price and matching live secrets. Local environment files are excluded from cloud deployment; the App Hosting configuration takes effect on the next deployment.
 
 EmailJS's invitation template remains `template_ho1ym4c` on service `service_mk2cjul`. A separate billing template uses `to_email`, `company_name`, `company_logo_url`, `primary_color`, `header_text_color`, `button_text_color`, `billing_url`, and `monthly_price`. Set To Email to `{{to_email}}`. Keep keys in server secrets; never prefix them `NEXT_PUBLIC_`. Provider acceptance is required before showing a send as confirmed. Unknown delivery is not automatically retried.
 

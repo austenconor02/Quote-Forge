@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import Stripe from "stripe";
-import { createStripeGateway, stripeConfigured } from "../../src/lib/server/stripe";
+import { createStripeGateway, stripeClient, stripeConfigured } from "../../src/lib/server/stripe";
 
 const customerId = "cus_QFtest", companyId = "qf-company";
 function fixture() {
@@ -18,6 +18,17 @@ test("Stripe stays unconfigured without the explicit enable flag, secrets, price
   try {
     Object.assign(process.env, {STRIPE_ENABLED: "false", STRIPE_SECRET_KEY: "sk_test_not_a_real_key", STRIPE_WEBHOOK_SECRET: "whsec_not_a_real_secret", STRIPE_PRICE_ID: "price_QFtest", APP_ORIGIN: "https://quoteforge.example.test"});
     assert.equal(stripeConfigured(), false); process.env.STRIPE_ENABLED = "true"; assert.equal(stripeConfigured(), true);
+    for (const missing of ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"] as const) {
+      const configuredValue = process.env[missing];
+      delete process.env[missing];
+      assert.equal(stripeConfigured(), false, `A configured Price ID cannot bypass missing ${missing}`);
+      assert.throws(() => stripeClient(), /not configured/);
+      process.env[missing] = configuredValue;
+    }
+    delete process.env.STRIPE_SECRET_KEY; delete process.env.STRIPE_WEBHOOK_SECRET;
+    assert.equal(stripeConfigured(), false, "A Price ID alone cannot enable checkout");
+    assert.throws(() => stripeClient(), /not configured/);
+    process.env.STRIPE_SECRET_KEY = "sk_test_not_a_real_key"; process.env.STRIPE_WEBHOOK_SECRET = "whsec_not_a_real_secret";
     process.env.APP_ORIGIN = "http://127.0.0.1:3000"; assert.equal(stripeConfigured(), false);
   } finally {for (const key of keys) {if (old[key] === undefined) delete process.env[key]; else process.env[key] = old[key];}}
 });
