@@ -21,11 +21,18 @@ test("cloud document extraction, private upload, saved sources and original down
   test.skip(process.env.QUOTEFORGE_RUN_CLOUD_BROWSER_TESTS !== "true", "Requires the explicit isolated Auth/Firestore/Storage emulator QA environment.");
   test.setTimeout(90000);
   const session = await createGoogleSession("owner@example.com");
+  const initialWorkspaceResponse = await session.request("/api/workspace");
+  const initialWorkspace = await initialWorkspaceResponse.json();
+  expect(initialWorkspaceResponse.status, JSON.stringify(initialWorkspace)).toBe(200);
   await authenticatedContext(context, session.cookie);
   const companyId = "cloud-doc-test-" + randomUUID();
   const company = { id: companyId, name: "Cloud Document QA", industry: "General services", email: "office@example.com", phone: "", address: "", website: "", status: "Draft", branding: { primary: "#122239", secondary: "#F5F7FA", accent: "#EE7D3B", font: "Arial", logo: "" }, fields: [], createdAt: new Date().toISOString(), origin: "owner" };
   const created = await session.request("/api/companies", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(company) });
   expect(created.status, await created.text()).toBe(200);
+  const createdWorkspaceResponse = await session.request("/api/workspace");
+  const createdWorkspace = await createdWorkspaceResponse.json();
+  expect(createdWorkspaceResponse.status, JSON.stringify(createdWorkspace)).toBe(200);
+  expect(createdWorkspace.companies.some((record: { id: string }) => record.id === companyId)).toBe(true);
   const pdf = new jsPDF({ unit: "pt", format: "letter" });
   pdf.setFontSize(18); pdf.text(["CLOUD SOURCE ESTIMATE", "Install trim 4 EA at $9.25", "Source total $37.00"], 50, 90);
   const original = Buffer.from(pdf.output("arraybuffer"));
