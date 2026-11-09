@@ -111,6 +111,6 @@ $env:QUOTEFORGE_RUN_CLOUD_BROWSER_TESTS='true'
 npm.cmd run test:browser -- cloud-documents.spec.ts
 ```
 
-The cloud browser test extracts a real PDF, enters manual pricing, saves it through the real server/emulator routes, reloads the saved source, and verifies original download bytes from a fresh browser context. Live Google OAuth, production Firebase provisioning, real EmailJS delivery, and automatic AI generation have not been verified.
+The cloud browser test extracts a real PDF, enters manual pricing, saves it through the real server/emulator routes, reloads the saved source, and verifies original download bytes from a fresh browser context. Production Firebase provisioning and App Hosting deployment are complete. The live login page, real public Google SDK configuration, anonymous private-data denial, and hosted OCR recognition were verified on November 9, 2026. The owner completed the first local Google sign-in; signed-in use of the deployed owner dashboard still awaits browser confirmation. Real EmailJS delivery and automatic AI generation remain unverified and disabled.
 
 The Firebase SDK/Admin dependencies were updated and audited. Targeted overrides pin patched gRPC/rimraf dependencies and Node 22-compatible Firebase app peers. Review these pins when upgrading Firebase rather than removing them without an audit.
