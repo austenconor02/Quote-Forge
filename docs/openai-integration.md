@@ -2,6 +2,10 @@
 
 QuoteForge's source-based AI backend was implemented November 9, 2026. The owner explicitly approved replacing the previously missing generation engine. It connects to the existing company quote editor and PDF generator; company creation and the owner dashboard retain their existing workflow.
 
+## Live release
+
+Firebase rollout `build-2026-11-09-002` succeeded at https://quoteforge--quote-forge-54595.us-central1.hosted.app. The deployed runtime has AI enabled, the pinned model, and a runtime-only reference to secret version 1. Inspection confirmed no plaintext API-key value in the Cloud Run environment configuration. Stripe and email remain disabled. Live checks confirmed that the new AI endpoint rejects unauthenticated requests and the deployed PDF parser/worker extracts a synthetic PDF correctly. No real company quote was automatically generated as part of the release; the authenticated end-to-end workflow was exercised in isolated emulators with a fake provider, alongside the separate real OpenAI synthetic-source test below.
+
 ## Key and account setup
 
 Create a project-scoped server key at https://platform.openai.com/api-keys. Configure OpenAI API billing for that project. Firebase Google sign-in authenticates QuoteForge users; it does not authorize OpenAI requests or give OpenAI access to Gmail or Drive.

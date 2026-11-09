@@ -77,7 +77,7 @@ EmailJS's invitation template remains `template_ho1ym4c` on service `service_mk2
 
 The owner-approved OpenAI source-compilation backend is now implemented. See [OpenAI integration](openai-integration.md) for server configuration, source-linked draft behavior, company isolation, tests, and remaining activation steps. Existing document processing, manual quotes, unit-price PDFs, invitations, and saved data paths are preserved.
 
-Live checks on November 9, 2026 confirmed the Google login page, redirect to login for anonymous visitors, rejection of unauthenticated private-data requests, and the disabled Stripe webhook. An isolated browser loaded the deployed OCR worker, core, and English model and correctly recognized `QUOTEFORGE OCR TEST` and `TOTAL $99.00` from a generated image. The first local Google sign-in established the verified owner UID; signed-in use of the deployed My Companies page still awaits the owner's browser confirmation. No real Stripe payment or email was sent.
+Live checks on November 9, 2026 confirmed the Google login page, redirect to login for anonymous visitors, rejection of unauthenticated private-data requests, and the disabled Stripe webhook. An isolated browser loaded the deployed OCR worker, core, and English model and correctly recognized `QUOTEFORGE OCR TEST` and `TOTAL $99.00` from a generated image. The first local Google sign-in established the verified owner UID; the owner subsequently confirmed signed-in access to My Companies. The later AI release and its exact verification are recorded in the OpenAI integration document. No real Stripe payment or email was sent.
 
 ## Firebase Console checks and repeat deployment
 
